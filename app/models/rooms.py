@@ -2,16 +2,14 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from app.db.base import Base
 
 
-class User(Base):
-    __tablename__ = "users"
+class Room(Base):
+    __tablename__ = "rooms"
 
     id = Column(Integer, primary_key=True)
 
-    username = Column(String(20), unique=True, nullable=False)
+    room_name = Column(String(100), nullable=False)
 
-    email = Column(String(256), unique=True, nullable=False)
-
-    password = Column(String(50), nullable=False)
+    code = Column(String(6), unique=True, nullable=False, index=True)
 
     created_at = Column(
         DateTime(timezone=True),
