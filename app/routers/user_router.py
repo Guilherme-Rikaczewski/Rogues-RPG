@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.user_schema import UserCreate, UserUpdate, UserResponse
-from app.services.user_service import (create_user, update_user,
-                                       get_user, delete_user)
+import app.services.user_service as us
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -12,7 +11,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.post("/", response_model=UserResponse)
 def create(user: UserCreate, db: Session = Depends(get_db)):
     try:
-        return create_user(db, user)
+        return us.create_user(db, user)
     except Exception:
         return HTTPException(500, detail='Internal server error')
 
@@ -20,7 +19,7 @@ def create(user: UserCreate, db: Session = Depends(get_db)):
 @router.patch('/{id}', response_model=UserResponse)
 def update(id: int, user: UserUpdate, db: Session = Depends(get_db)):
     try:
-        return update_user(db, id, user)
+        return us.update_user(db, id, user)
     except Exception:
         return HTTPException(500, detail='Internal server error')
 
@@ -28,7 +27,7 @@ def update(id: int, user: UserUpdate, db: Session = Depends(get_db)):
 @router.get('/{id}', response_model=UserResponse)
 def read(id: int, db: Session = Depends(get_db)):
     try:
-        return get_user(db, id)
+        return us.get_user(db, id)
     except Exception:
         return HTTPException(500, detail='Internal server error')
 
@@ -36,7 +35,7 @@ def read(id: int, db: Session = Depends(get_db)):
 @router.delete('/{id}', status_code=204)
 def delete(id: int, db: Session = Depends(get_db)):
     try:
-        success = delete_user(db, id)
+        success = us.delete_user(db, id)
 
         if not success:
             raise
