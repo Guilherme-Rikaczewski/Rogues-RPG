@@ -19,6 +19,7 @@ Username = Annotated[
     str,
     StringConstraints(
         max_length=20,
+        min_length=1,
         strip_whitespace=True,
     )
 ]
@@ -31,4 +32,23 @@ Password = Annotated[
         strip_whitespace=True,
     ),
     AfterValidator(validate_password)
+]
+
+RoomName = Annotated[
+    str,
+    StringConstraints(
+        max_length=100,
+        min_length=1,
+        strip_whitespace=True,
+    )
+]
+
+RoomCode = Annotated[
+    str,
+    StringConstraints(
+        max_length=6,
+        min_length=6,
+        strip_whitespace=True,
+        to_upper=True,
+    )
 ]

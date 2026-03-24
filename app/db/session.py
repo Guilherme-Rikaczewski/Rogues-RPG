@@ -4,14 +4,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-ENV_PATH = Path(__file__).parent.parent.parent.parent / '.env'
+ENV_PATH = Path(__file__).parent.parent.parent / '.env'
 load_dotenv(dotenv_path=ENV_PATH)
 db_user = os.getenv("PG_USER")
 db_password = os.getenv("PG_PASSWORD")
 db_pg = os.getenv("PG_DATABASE")
 db_host = os.getenv("PG_HOST")
 
-DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:5432/{db_pg}"
+DATABASE_URL = f"postgresql+psycopg://{db_user}:{db_password}@{db_host}:5432/{db_pg}"
 
 engine = create_engine(DATABASE_URL)
 
