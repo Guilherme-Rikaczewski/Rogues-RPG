@@ -58,9 +58,6 @@ def update_room(
 def get_room(db: Session, room_id: int) -> Room | None:
     try:
         room = db.get(Room, room_id)
-        if not room:
-            return None
-
         return room
     except Exception:
         raise
@@ -69,16 +66,31 @@ def get_room(db: Session, room_id: int) -> Room | None:
 def get_all_rooms_from_user(db: Session, user_id: int) -> list[Room] | None:
     try:
         rooms = (
-            db.query(Room)
+            db.query(
+                Room,
+                RoomUser.role.label("role")
+            )
             .join(RoomUser, RoomUser.room_id == Room.id)
             .filter(RoomUser.user_id == user_id)
-            # .order_by(RoomUser.last_access.desc())
             .order_by(Room.room_name)
             .all()
         )
         if not rooms:
             return None
-        return rooms
+
+        result: list = []
+
+        for room, role in rooms:
+            result.append({
+                "id": room.id,
+                "room_name": room.room_name,
+                "code": room.code,
+                "role": role,
+                "created_at": room.created_at,
+                "updated_at": room.updated_at,
+            })
+
+        return result
     except Exception:
         raise
 
@@ -86,16 +98,31 @@ def get_all_rooms_from_user(db: Session, user_id: int) -> list[Room] | None:
 def get_recent_rooms_from_user(db: Session, user_id: int) -> list[Room] | None:
     try:
         rooms = (
-            db.query(Room)
+            db.query(
+                Room,
+                RoomUser.role.label("role")
+            )
             .join(RoomUser, RoomUser.room_id == Room.id)
             .filter(RoomUser.user_id == user_id)
             .order_by(RoomUser.last_access.desc())
-            .limit(6)
             .all()
         )
         if not rooms:
             return None
-        return rooms
+
+        result: list = []
+
+        for room, role in rooms:
+            result.append({
+                "id": room.id,
+                "room_name": room.room_name,
+                "code": room.code,
+                "role": role,
+                "created_at": room.created_at,
+                "updated_at": room.updated_at,
+            })
+
+        return result
     except Exception:
         raise
 

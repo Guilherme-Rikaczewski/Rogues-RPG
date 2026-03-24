@@ -15,6 +15,7 @@ class RoomResponse(BaseModel):
     id: int
     room_name: RoomName
     code: RoomCode
+    role: str
     created_at: datetime
     updated_at: datetime
 

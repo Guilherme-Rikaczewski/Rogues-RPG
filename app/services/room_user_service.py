@@ -19,3 +19,15 @@ def create_room_user(db: Session, room_id: int, user_id: int) -> RoomUser:
     except Exception:
         db.rollback()
         raise
+
+
+def read_role_room_user(db: Session, room_id: int, user_id: int) -> RoomUser:
+    try:
+        room_user = db.query(RoomUser).filter(
+            RoomUser.room_id == room_id,
+            RoomUser.user_id == user_id
+        ).first()
+        return room_user
+    except Exception:
+        db.rollback()
+        raise
