@@ -1,36 +1,57 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.room_schema import RoomCreate, RoomUpdate, RoomResponse
+from app.schemas.room_schema import (RoomCreate, RoomUpdate,
+                                     RoomResponse, RoomRole)
+from app.schemas.types import RoomCode
 import app.services.room_user_service as rus
 import app.services.room_service as rs
+from app.services.auth_service import get_current_user_id
+
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 
-@router.post("/{id}", response_model=RoomResponse)
-def create(id: int, room: RoomCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=RoomResponse)
+def create(
+    room: RoomCreate,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+        ):
     try:
         new_room = rs.create_room(db, room)
-        room_user = rus.create_room_user(db, new_room.id, id)
+        room_user = rus.create_room_user(db, new_room.id, user_id)
         setattr(new_room, 'role', room_user.role)
         return new_room
     except Exception:
-        return HTTPException(500, detail='Internal server error')
+        raise HTTPException(500, detail='Internal server error')
 
 
-@router.patch('/{id}', response_model=RoomResponse)
-def update(id: int, room: RoomUpdate, db: Session = Depends(get_db)):
+@router.patch('/{room_id}', response_model=RoomResponse)
+def update(room_id: int,
+           room: RoomUpdate,
+           user_id: int = Depends(get_current_user_id), 
+           db: Session = Depends(get_db)):
     try:
-        updated_room = rs.update_room(db, id, room)
-        setattr(updated_room, 'role', 'master')
+        room_user = rus.read_role_room_user(db, room_id, user_id)
+        if room_user.role != RoomRole.master:
+            raise HTTPException(403, detail='Permission denied')
+
+        updated_room = rs.update_room(db, room_id, room)
+        setattr(updated_room, 'role', room_user.role)
         return updated_room
-    except Exception:
-        return HTTPException(500, detail='Internal server error')
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(500, detail=f'Internal server error {error}')
 
 
-@router.get('/{room_id}/user/{user_id}', response_model=RoomResponse)
-def read(room_id: int, user_id: int, db: Session = Depends(get_db)):
+@router.get('/{room_id}', response_model=RoomResponse)
+def read(
+    room_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+        ):
     try:
         get_room = rs.get_room(db, room_id)
         if not get_room:
@@ -43,28 +64,61 @@ def read(room_id: int, user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(500, detail='Internal server error')
 
 
-@router.get('/all/{id}')
-def read_all(id: int, db: Session = Depends(get_db)):
+@router.get('/all/')
+def read_all(user_id: int = Depends(get_current_user_id),
+             db: Session = Depends(get_db)):
     try:
-        return rs.get_all_rooms_from_user(db, id)
+        return rs.get_all_rooms_from_user(db, user_id)
     except Exception:
-        return HTTPException(500, detail='Internal server error')
+        raise HTTPException(500, detail='Internal server error')
 
 
-@router.get('/recent/{id}')
-def read_recent(id: int, db: Session = Depends(get_db)):
+@router.get('/recent/')
+def read_recent(user_id: int = Depends(get_current_user_id),
+                db: Session = Depends(get_db)):
     try:
-        return rs.get_recent_rooms_from_user(db, id)
+        return rs.get_recent_rooms_from_user(db, user_id)
     except Exception:
-        return HTTPException(500, detail='Internal server error')
+        raise HTTPException(500, detail='Internal server error')
 
 
-@router.delete('/{id}', status_code=204)
-def delete(id: int, db: Session = Depends(get_db)):
+@router.delete('/{room_id}', status_code=204)
+def delete(room_id: int,
+           user_id: int = Depends(get_current_user_id),
+           db: Session = Depends(get_db)):
     try:
-        success = rs.delete_room(db, id)
+        room_user = rus.read_role_room_user(db, room_id, user_id)
+        if room_user.role != RoomRole.master:
+            raise HTTPException(403, detail='Permission denied')
+
+        success = rs.delete_room(db, room_id)
 
         if not success:
             raise
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(500, detail=f'Internal server error {error}')
+
+
+@router.post('/join/{room_code}', response_model=RoomResponse)
+def join_room(
+    room_code: RoomCode,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    try:
+        room_user = rus.join_room_by_code(
+            db, room_code, user_id
+        )
+
+        room = rs.get_room(db, room_user.room_id)
+        if not room:
+            raise HTTPException(500, detail='Internal server error')
+
+        setattr(room, 'role', room_user.role)
+        return room
+    except HTTPException:
+        raise
     except Exception:
-        return HTTPException(500, detail='Internal server error')
+        raise HTTPException(500, detail='Internal server error')

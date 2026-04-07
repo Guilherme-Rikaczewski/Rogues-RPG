@@ -1,6 +1,12 @@
 from pydantic import BaseModel
 from datetime import datetime
 from app.schemas.types import RoomName, RoomCode
+import enum
+
+
+class RoomRole(enum.Enum):
+    master = "master"
+    player = "player"
 
 
 class RoomCreate(BaseModel):

@@ -6,9 +6,9 @@ import os
 
 ENV_PATH = Path(__file__).parent.parent.parent / '.env'
 load_dotenv(dotenv_path=ENV_PATH)
-db_user = os.getenv("PG_USER")
-db_password = os.getenv("PG_PASSWORD")
-db_pg = os.getenv("PG_DATABASE")
+db_user = os.getenv("POSTGRES_USER")
+db_password = os.getenv("POSTGRES_PASSWORD")
+db_pg = os.getenv("POSTGRES_DB")
 db_host = os.getenv("PG_HOST")
 
 DATABASE_URL = f"postgresql+psycopg://{db_user}:{db_password}@{db_host}:5432/{db_pg}"
