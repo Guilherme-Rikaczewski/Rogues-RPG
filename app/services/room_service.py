@@ -135,7 +135,7 @@ def delete_room(db: Session, room_id: int) -> bool:
 
         db.delete(room)
         db.commit()
-        db.refresh(room)
+        # db.refresh(room)
 
         return True
     except Exception:

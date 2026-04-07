@@ -1,11 +1,6 @@
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, Enum, func, Index
 from app.db.base import Base
-import enum
-
-
-class RoomRole(enum.Enum):
-    master = "master"
-    player = "player"
+from app.schemas.room_schema import RoomRole
 
 
 class RoomUser(Base):
