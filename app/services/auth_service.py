@@ -68,13 +68,13 @@ async def save_refresh_token(user_id: int, token: str, connection: Redis):
     )
 
 
-async def validate_refresh_token(token, connection: Redis) -> str | bool:
+async def validate_refresh_token(token, connection: Redis) -> int | bool:
     hashed_token = token_hash(token)
     key = f'refresh:{hashed_token}'
     user_id = await connection.get(key)
     if not user_id:
         return False
-    return user_id
+    return int(user_id)
 
 
 async def delete_refresh_token(token, connection: Redis):

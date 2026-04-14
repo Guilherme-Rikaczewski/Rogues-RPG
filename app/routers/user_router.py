@@ -14,8 +14,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def create(user: UserCreate, db: Session = Depends(get_db)):
     try:
         return us.create_user(db, user)
-    except Exception as error:
-        raise HTTPException(500, detail=f'Internal server error {error}')
+    except Exception:
+        raise HTTPException(500, detail='Internal server error')
 
 
 @router.patch('/', response_model=UserResponse)
