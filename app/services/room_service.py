@@ -105,6 +105,7 @@ def get_recent_rooms_from_user(db: Session, user_id: int) -> list[Room] | None:
             .join(RoomUser, RoomUser.room_id == Room.id)
             .filter(RoomUser.user_id == user_id)
             .order_by(RoomUser.last_access.desc())
+            .limit(9)
             .all()
         )
         if not rooms:
