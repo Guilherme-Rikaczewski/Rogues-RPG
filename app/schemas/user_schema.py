@@ -7,6 +7,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     username: Username
     password: Password
+    storage_usage: int = 0
 
 
 class UserUpdate(BaseModel):

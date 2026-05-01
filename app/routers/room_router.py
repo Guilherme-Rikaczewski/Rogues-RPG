@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.room_schema import (RoomCreate, RoomUpdate,
@@ -6,6 +6,7 @@ from app.schemas.room_schema import (RoomCreate, RoomUpdate,
 from app.schemas.types import RoomCode
 import app.services.room_user_service as rus
 import app.services.room_service as rs
+import app.services.user_service as us
 from app.services.auth_service import get_current_user_id
 
 
@@ -34,6 +35,10 @@ def update(room_id: int,
            db: Session = Depends(get_db)):
     try:
         room_user = rus.read_role_room_user(db, room_id, user_id)
+        
+        if not room_user:
+            raise HTTPException(403, detail='Permission denied')
+        
         if room_user.role != RoomRole.master:
             raise HTTPException(403, detail='Permission denied')
 
@@ -122,3 +127,46 @@ def join_room(
         raise
     except Exception:
         raise HTTPException(500, detail='Internal server error')
+
+
+@router.patch('/upload/{room_id}', response_model=RoomResponse)
+def update_room_thumb_image(room_id: int,
+           file: UploadFile = File(...),
+           user_id: int = Depends(get_current_user_id), 
+           db: Session = Depends(get_db)):
+    try:
+        MAX_SIZE = 10 * 1024 * 1024 
+
+        file.file.seek(0, 2) 
+        size = file.file.tell()
+        file.file.seek(0)
+
+        if size > MAX_SIZE:
+            raise HTTPException(400, "File exceeds maximum size: 10MB")
+        if file.content_type not in ["image/png", "image/jpeg", "image/webp"]:
+            raise HTTPException(400, detail="Invalid file type")
+        
+        
+        room_user = rus.read_role_room_user(db, room_id, user_id)
+        if not room_user:
+            raise HTTPException(403, detail='Permission denied')
+            
+        if room_user.role != RoomRole.master:
+            raise HTTPException(403, detail='Permission denied')
+        
+        
+        updated_room = rs.upload_room_thumb_image(
+            db, room_id, user_id, file,
+        )
+        if not updated_room:
+            raise  HTTPException(404, detail="Room not found")
+        
+        
+        setattr(updated_room, 'role', room_user.role)
+        return updated_room
+    except ValueError as error:
+       raise HTTPException(400, detail=str(error))
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(500, detail=f'Internal server error {error}')

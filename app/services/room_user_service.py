@@ -23,7 +23,7 @@ def create_room_user(db: Session, room_id: int, user_id: int) -> RoomUser:
         raise
 
 
-def read_role_room_user(db: Session, room_id: int, user_id: int) -> RoomUser:
+def read_role_room_user(db: Session, room_id: int, user_id: int) -> RoomUser | None:
     try:
         room_user = db.query(RoomUser).filter(
             RoomUser.room_id == room_id,

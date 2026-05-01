@@ -11,6 +11,9 @@ class RoomRole(enum.Enum):
 
 class RoomCreate(BaseModel):
     room_name: RoomName
+    thumb_image_url: str = ''
+    thumb_image_size: int = 0
+    thumb_image_public_id: str = ''
 
 
 class RoomUpdate(BaseModel):
@@ -22,6 +25,7 @@ class RoomResponse(BaseModel):
     room_name: RoomName
     code: RoomCode
     role: str
+    thumb_image_url: str
     created_at: datetime
     updated_at: datetime
 
