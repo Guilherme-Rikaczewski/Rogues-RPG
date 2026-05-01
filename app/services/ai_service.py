@@ -1,4 +1,5 @@
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 
 
@@ -48,7 +49,10 @@ def get_char_made_by_ai(atributtes: dict):
     prompt = first_part + seconde_part
 
     response = client.models.generate_content(
-        model="gemini-3-flash-preview", contents=prompt
+        model="gemini-3-flash-preview", contents=prompt,
+        config=types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_level="low")
+        )
     )
 
     return response.text

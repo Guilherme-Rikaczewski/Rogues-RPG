@@ -1,9 +1,12 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.rooms import Room
+from app.models.users import User
 from app.models.room_users import RoomUser
 from app.schemas.room_schema import RoomCreate, RoomUpdate
 from app.utils.code import generate_code
+from app.utils.user_file_manager import upload_image, delete_image
+from fastapi import UploadFile, File
 
 
 def create_room(db: Session, room_data: RoomCreate) -> Room:
@@ -86,6 +89,7 @@ def get_all_rooms_from_user(db: Session, user_id: int) -> list[Room] | None:
                 "room_name": room.room_name,
                 "code": room.code,
                 "role": role,
+                "thumb_image_url": room.thumb_image_url,
                 "created_at": room.created_at,
                 "updated_at": room.updated_at,
             })
@@ -119,6 +123,7 @@ def get_recent_rooms_from_user(db: Session, user_id: int) -> list[Room] | None:
                 "room_name": room.room_name,
                 "code": room.code,
                 "role": role,
+                "thumb_image_url": room.thumb_image_url,
                 "created_at": room.created_at,
                 "updated_at": room.updated_at,
             })
@@ -139,6 +144,50 @@ def delete_room(db: Session, room_id: int) -> bool:
         # db.refresh(room)
 
         return True
+    except Exception:
+        db.rollback()
+        raise
+
+
+def upload_room_thumb_image(
+    db: Session,
+    room_id: int,
+    user_id: int,
+    file: UploadFile,
+) -> Room | None:
+    try:
+        room = db.query(Room).filter(Room.id == room_id).first()
+        if not room:
+            return None
+        
+        image = upload_image(
+            file.file, user_id, img_id=f'{room_id}/thumb'
+        )
+        
+        MAX_ALLOWED_FOR_USER = 50 * 1024 * 1024
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        
+        storage_without_thumb = max(0, (user.storage_usage - room.thumb_image_size))
+        
+        future_storage_with_new_thumb = storage_without_thumb + image['size']
+        
+        if future_storage_with_new_thumb > MAX_ALLOWED_FOR_USER:
+            delete_image(image['public_id'])
+            raise ValueError('The image exceeds its storage limit.')
+        
+        room.thumb_image_url = image['url']
+        room.thumb_image_size = image['size']
+        room.thumb_image_public_id = image['public_id']
+        
+        user.storage_usage = future_storage_with_new_thumb
+        
+        db.commit()
+        db.refresh(room)
+        
+        return room
     except Exception:
         db.rollback()
         raise

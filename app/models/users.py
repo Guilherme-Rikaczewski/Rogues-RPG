@@ -12,6 +12,8 @@ class User(Base):
     email = Column(String(256), unique=True, nullable=False)
 
     password = Column(Text, nullable=False)
+    
+    storage_usage = Column(Integer, nullable=False, default=0)
 
     created_at = Column(
         DateTime(timezone=True),
