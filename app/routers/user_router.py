@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -14,8 +14,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def create(user: UserCreate, db: Session = Depends(get_db)):
     try:
         return us.create_user(db, user)
-    except Exception:
-        raise HTTPException(500, detail='Internal server error')
+    except Exception as error:
+        raise HTTPException(500, detail=f'Internal server error {error}')
 
 
 @router.patch('/', response_model=UserResponse)
@@ -51,3 +51,35 @@ def delete(
             raise
     except Exception:
         raise HTTPException(500, detail='Internal server error')
+
+
+@router.patch('/upload/profilepic', response_model=UserResponse)
+def update_room_thumb_image(
+           file: UploadFile = File(...),
+           user_id: int = Depends(get_current_user_id), 
+           db: Session = Depends(get_db)):
+    try:
+        MAX_SIZE = 10 * 1024 * 1024 
+
+        file.file.seek(0, 2) 
+        size = file.file.tell()
+        file.file.seek(0)
+
+        if size > MAX_SIZE:
+            raise HTTPException(400, "File exceeds maximum size: 10MB")
+        if file.content_type not in ["image/png", "image/jpeg", "image/webp"]:
+            raise HTTPException(400, detail="Invalid file type")
+        
+        updated_user = us.upload_profile_pic_image(
+            db, user_id, file,
+        )
+        if not updated_user:
+            raise  HTTPException(404, detail="user not found")
+        
+        return updated_user
+    except ValueError as error:
+       raise HTTPException(400, detail=str(error))
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(500, detail=f'Internal server error {error}')

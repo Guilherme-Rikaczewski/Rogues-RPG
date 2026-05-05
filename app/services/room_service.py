@@ -6,7 +6,7 @@ from app.models.room_users import RoomUser
 from app.schemas.room_schema import RoomCreate, RoomUpdate
 from app.utils.code import generate_code
 from app.utils.user_file_manager import upload_image, delete_image
-from fastapi import UploadFile, File
+from fastapi import UploadFile
 
 
 def create_room(db: Session, room_data: RoomCreate) -> Room:
@@ -138,6 +138,9 @@ def delete_room(db: Session, room_id: int) -> bool:
         room = db.query(Room).filter(Room.id == room_id).first()
         if not room:
             return False
+        
+        if room.thumb_image_public_id != '':
+            delete_image(room.thumb_image_public_id)
 
         db.delete(room)
         db.commit()
@@ -161,7 +164,8 @@ def upload_room_thumb_image(
             return None
         
         image = upload_image(
-            file.file, user_id, img_id=f'{room_id}/thumb'
+            file.file, user_id, img_id=f'thumb_room_{room_id}',
+            extra_folder=f'/rooms/{room_id}'
         )
         
         MAX_ALLOWED_FOR_USER = 50 * 1024 * 1024

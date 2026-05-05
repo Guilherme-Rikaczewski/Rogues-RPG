@@ -18,15 +18,15 @@ config = cloudinary.config(
 )
 
 
-def upload_image(file, user_id, img_id) -> dict:
+def upload_image(file, user_id, img_id, extra_folder='', max_width = 2048, max_height = 2048) -> dict:
     result = cloudinary.uploader.upload(
         file,
-        folder=f'users/{user_id}',
+        folder=f'users/user_{user_id}{extra_folder}',
         public_id=img_id,
         transformation=[
             {"quality": "auto"},
             {"fetch_format": "auto"},
-            {"width": 2048, "height": 2048, "crop": "limit"},
+            {"width": max_width, "height": max_height, "crop": "limit"},
             {"strip_metadata": True}
         ]
     )
