@@ -129,7 +129,7 @@ def join_room(
         raise HTTPException(500, detail='Internal server error')
 
 
-@router.patch('/upload/{room_id}', response_model=RoomResponse)
+@router.patch('/upload/thumb/{room_id}', response_model=RoomResponse)
 def update_room_thumb_image(room_id: int,
            file: UploadFile = File(...),
            user_id: int = Depends(get_current_user_id), 
@@ -156,7 +156,7 @@ def update_room_thumb_image(room_id: int,
         
         
         updated_room = rs.upload_room_thumb_image(
-            db, room_id, user_id, file,
+            db, room_id, user_id, file
         )
         if not updated_room:
             raise  HTTPException(404, detail="Room not found")

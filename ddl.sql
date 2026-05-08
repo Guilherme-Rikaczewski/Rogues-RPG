@@ -5,6 +5,10 @@ CREATE TABLE users (
     email VARCHAR(256) NOT NULL UNIQUE,
     password TEXT NOT NULL,
     storage_usage INTEGER NOT NULL DEFAULT 0,
+    hours_played INTEGER NOT NULL DEFAULT 0,
+    profilepic_image_image_url TEXT,
+    profilepic_image_image_size INTEGER NOT NULL DEFAULT 0,
+    profilepic_image_image_public_id TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
