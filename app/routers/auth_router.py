@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Cookie
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.auth_schema import LoginResponse, TokenData
+from app.schemas.auth_schema import TokenData
 from datetime import timedelta
 from app.utils.refresh import create_opaque_token
 from app.cache.client import connection
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
-@router.post('/login/', response_model=LoginResponse)
+@router.post('/login/')
 async def login(response: Response,
                 form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
                 db: Session = Depends(get_db)):
@@ -37,7 +37,17 @@ async def login(response: Response,
             token_data.id, refresh_token, connection
         )
 
-        response.headers['Authorization'] = f'Bearer {access_token}'
+        # response.headers['Authorization'] = f'Bearer {access_token}'
+
+        response.set_cookie(
+            key='accessToken',
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite='strict',
+            path="/",
+            max_age=60*60
+        )
 
         response.set_cookie(
             key='refreshToken',
@@ -45,20 +55,18 @@ async def login(response: Response,
             httponly=True,
             secure=False,
             samesite='strict',
+            path="/",
             max_age=60*60*24*7
         )
 
-        return LoginResponse(
-            access_token=access_token,
-            token_type='Bearer'
-        )
+        return {"message": "Login successful"}
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(500, detail='Internal server error')
+    except Exception as error:
+        raise HTTPException(500, detail=f'Internal server error: {error}')
 
 
-@router.post('/refresh/', response_model=LoginResponse)
+@router.post('/refresh/')
 async def new_refresh(
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias="refreshToken")
@@ -67,11 +75,9 @@ async def new_refresh(
         if not refresh_token:
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        user_id = await aus.validate_refresh_token(refresh_token, connection)
+        user_id = await aus.consume_refresh_token(refresh_token, connection)
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid credentials")
-
-        await aus.delete_refresh_token(refresh_token, connection)
 
         new_refresh_token = create_opaque_token()
         await aus.save_refresh_token(
@@ -86,18 +92,26 @@ async def new_refresh(
         )
 
         response.set_cookie(
+            key='accessToken',
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite='strict',
+            path="/",
+            max_age=60*60
+        )
+
+        response.set_cookie(
             key='refreshToken',
             value=new_refresh_token,
             httponly=True,
             secure=False,
             samesite='strict',
+            path="/",
             max_age=60*60*24*7
         )
 
-        return LoginResponse(
-            access_token=access_token,
-            token_type='Bearer'
-        )
+        return {'message': 'Refresh successful'}
 
     except HTTPException:
         raise
@@ -118,12 +132,30 @@ async def logout(
             if user_id:
                 await aus.delete_refresh_token(refresh_token, connection)
 
-        response.set_cookie(
-            key='refreshToken',
-            value='',
-            max_age=0,
-            expires=0
+        response.delete_cookie(
+            key="refreshToken",
+            path="/"
         )
+
+        response.delete_cookie(
+            key="accessToken",
+            path="/"
+        )
+        # response.set_cookie(
+        #     key='refreshToken',
+        #     value='',
+        #     max_age=0,
+        #     expires=0,
+        #     path="/",
+        # )
+
+        # response.set_cookie(
+        #     key='accessToken',
+        #     value='',
+        #     max_age=0,
+        #     expires=0,
+        #     path="/",
+        # )
 
         return {'message': 'Logout successful'}
 
