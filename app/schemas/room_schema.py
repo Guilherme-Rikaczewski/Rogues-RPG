@@ -4,7 +4,7 @@ from app.schemas.types import RoomName, RoomCode
 import enum
 
 
-class RoomRole(enum.Enum):
+class RoomRole(str, enum.Enum):
     master = "master"
     player = "player"
 
@@ -24,7 +24,7 @@ class RoomResponse(BaseModel):
     id: int
     room_name: RoomName
     code: RoomCode
-    role: str
+    role: RoomRole
     thumb_image_url: str
     created_at: datetime
     updated_at: datetime

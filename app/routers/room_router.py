@@ -119,7 +119,7 @@ def join_room(
 
         room = rs.get_room(db, room_user.room_id)
         if not room:
-            raise HTTPException(500, detail='Internal server error')
+            raise HTTPException(404, detail='Room not found')
 
         setattr(room, 'role', room_user.role)
         return room

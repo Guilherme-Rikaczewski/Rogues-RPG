@@ -29,6 +29,11 @@ async def tabletop_socket(
         while True:
             data = await websocket.receive_json()
 
+            data_type = data.get("type")
+
+            if data_type == 'token.move':
+                pass
+
             await manager.broadcast(
                 room_code,
                 {
