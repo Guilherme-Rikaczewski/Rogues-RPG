@@ -12,23 +12,26 @@ class ConnectionManager:
         user_id: int,
         websocket: WebSocket
     ):
-        if room_code not in self.active_connections:
-            self.active_connections[room_code] = {}
+        room = self.active_connections.setdefault(
+            room_code, {}
+        )
+        # if room_code not in self.active_connections:
+        #     self.active_connections[room_code] = {}
 
-        room = self.active_connections[room_code]
+        # room = self.active_connections[room_code]
 
-        connection_already_established = room.get(user_id)
+        old_connection = room.get(user_id)
 
-        if connection_already_established is not None:
-            await connection_already_established.close(
+        if old_connection is not None:
+            await old_connection.close(
                 code=4001,
                 reason="Another session connected"
             )
 
         await websocket.accept()
 
-        if room_code not in self.active_connections:
-            self.active_connections[room_code] = {}
+        # if room_code not in self.active_connections:
+        #     self.active_connections[room_code] = {}
 
         room[user_id] = websocket
 
@@ -75,8 +78,13 @@ class ConnectionManager:
         if not room:
             return
 
-        for webscoket in room.values():
-            await webscoket.send_json(message)
+        for user_id, webscoket in room.items():
+            try:
+                await webscoket.send_json(message)
+            except Exception:
+                self.disconnect(
+                    room_code, user_id, active_websocket=True
+                )
 
 
 manager = ConnectionManager()

@@ -9,7 +9,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 @router.post('/create/', response_model=AiResponse)
-def generete_character(atributtes: CharacterAtributtes):
+async def generete_character(atributtes: CharacterAtributtes):
     try:
         char_atributtes = {
             'game': atributtes.game,
@@ -22,7 +22,7 @@ def generete_character(atributtes: CharacterAtributtes):
             'build': atributtes.build,
         }
 
-        ai_generated_char = ai.get_char_made_by_ai(char_atributtes)
+        ai_generated_char = await ai.get_char_made_by_ai(char_atributtes)
         ai_generated_char_dict = ast.literal_eval(ai_generated_char)
         return ai_generated_char_dict
     except HTTPException:

@@ -38,7 +38,7 @@ class DnDSheet(BaseModel):
     saving_throws: dt.SavingThrows
     inventory: dt.Inventory
     bio: dt.Bio
-    skills: None
+    skills: dt.Skills
     spell_slots: dt.SpellSlots
 
     customizable_features: list[dt.CustomizableFeature] = []

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_char_made_by_ai(atributtes: dict):
+async def get_char_made_by_ai(atributtes: dict):
     for k, v in atributtes.items():
         if v is None:
             atributtes[f'{k}'] = 'Not specified'
