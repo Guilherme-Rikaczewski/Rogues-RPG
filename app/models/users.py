@@ -12,15 +12,15 @@ class User(Base):
     email = Column(String(256), unique=True, nullable=False)
 
     password = Column(Text, nullable=False)
-    
+
     storage_usage = Column(Integer, nullable=False, default=0)
-    
+
     hours_played = Column(Integer, nullable=False, default=0)
-    
+
     profilepic_image_url = Column(Text, nullable=False, default='')
-    
+
     profilepic_image_size = Column(Integer, nullable=False, default=0)
-    
+
     profilepic_image_public_id = Column(Text, nullable=False, default='')
 
     created_at = Column(

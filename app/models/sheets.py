@@ -15,8 +15,6 @@ class Sheet(Base):
 
     name = Column(Text, nullable=False)
 
-    hours_played = Column(Integer, nullable=False, default=0)
-
     token_image_url = Column(Text, nullable=False, default='')
 
     token_image_public_id = Column(Text, nullable=False, default='')
