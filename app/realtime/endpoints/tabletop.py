@@ -14,15 +14,22 @@ from app.services.auth_service import (
 from app.services.tabletop_service import (
     update_asset, roll_dices
 )
+from app.services.user_service import (
+    update_user, get_user
+)
+from app.schemas.user_schema import (
+    UserUpdate
+)
 from app.schemas.tabletop_schema import (
     AssetUpdate,
     AssetMoveMessage,
     DiceRollMessage,
+    ChatMessage,
     WebSocketMessage
 )
 from app.db.session import get_db
 import traceback
-
+from datetime import datetime, timezone, timedelta
 
 router = APIRouter(
     prefix="/ws",
@@ -31,7 +38,8 @@ router = APIRouter(
 
 MESSAGE_TYPES = {
     "asset.move": AssetMoveMessage,
-    "dice.roll": DiceRollMessage
+    "dice.roll": DiceRollMessage,
+    "chat.message": ChatMessage,
 }
 
 
@@ -49,6 +57,14 @@ async def tabletop_socket(
     )
 
     try:
+        await update_user(
+            db,
+            user_id,
+            user_data=UserUpdate(
+                last_room_enter_at=datetime.now(timezone.utc)
+            )
+        )
+
         await manager.broadcast(
             room_code,
             {
@@ -125,12 +141,36 @@ async def tabletop_socket(
                 data.result["dices"] = dices_result
                 data.result["total"] = total
 
+                if data.only_for_user_id is not None:
+                    await manager.send_to_user(
+                        room_code,
+                        data.only_for_user_id,
+                        message={
+                            'event': 'message',
+                            'user_id': user_id,
+                            'payload': data.model_dump()
+                        }
+                    )
+                    continue
+            elif isinstance(data, ChatMessage):
+                if data.only_for_user_id is not None:
+                    await manager.send_to_user(
+                        room_code,
+                        data.only_for_user_id,
+                        message={
+                            'event': 'message',
+                            'user_id': user_id,
+                            'payload': data.model_dump()
+                        }
+                    )
+                    continue
+
             await manager.broadcast(
                 room_code,
                 {
                     'event': 'message',
                     'user_id': user_id,
-                    'payload': data
+                    'payload': data.model_dump()
                 }
             )
 
@@ -146,6 +186,24 @@ async def tabletop_socket(
                 user_id=user_id,
                 active_websocket=active_socket
             )
+
+            user = await get_user(db, user_id)
+            if user:
+                disconnect_datetime = datetime.now(timezone.utc)
+                time_connected: timedelta = (
+                    disconnect_datetime - user.last_room_enter_at  # type: ignore
+                )
+                seconds_connected = int(time_connected.total_seconds())
+                new_seconds_played = int(
+                    user.seconds_played + seconds_connected
+                )
+                await update_user(
+                    db,
+                    user_id,
+                    user_data=UserUpdate(
+                        seconds_played=new_seconds_played
+                    )
+                )
 
             await manager.broadcast(
                 room_code,

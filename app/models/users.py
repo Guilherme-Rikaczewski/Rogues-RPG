@@ -15,13 +15,19 @@ class User(Base):
 
     storage_usage = Column(Integer, nullable=False, default=0)
 
-    hours_played = Column(Integer, nullable=False, default=0)
+    seconds_played = Column(Integer, nullable=False, default=0)
 
     profilepic_image_url = Column(Text, nullable=False, default='')
 
     profilepic_image_size = Column(Integer, nullable=False, default=0)
 
     profilepic_image_public_id = Column(Text, nullable=False, default='')
+
+    last_room_enter_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
 
     created_at = Column(
         DateTime(timezone=True),

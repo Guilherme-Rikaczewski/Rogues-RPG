@@ -14,6 +14,7 @@ from app.utils.user_file_manager import (
     delete_image
 )
 from fastapi import UploadFile
+from sqlalchemy.orm import aliased
 
 
 async def create_room(
@@ -111,43 +112,62 @@ async def get_room(
 async def get_all_rooms_from_user(
     db: AsyncSession,
     user_id: int
-) -> list[dict] | None:
+) -> list[dict]:
 
     try:
+
+        room_user_owner = aliased(RoomUser)
+        room_user_member = aliased(RoomUser)
 
         result_query = await db.execute(
             select(
                 Room,
-                RoomUser.role.label("role")
+                room_user_owner.role.label("role"),
+                User.profilepic_image_url
             )
             .join(
-                RoomUser,
-                RoomUser.room_id == Room.id
+                room_user_owner,
+                room_user_owner.room_id == Room.id
             )
-            .where(RoomUser.user_id == user_id)
+            .join(
+                room_user_member,
+                room_user_member.room_id == Room.id
+            )
+            .join(
+                User,
+                User.id == room_user_member.user_id
+            )
+            .where(room_user_owner.user_id == user_id)
             .order_by(Room.room_name)
         )
 
-        rooms = result_query.all()
+        rows = result_query.all()
 
-        if not rooms:
-            return None
+        if not rows:
+            return []
 
-        result = []
+        rooms_map = {}
 
-        for room, role in rooms:
+        for room, role, profilepic in rows:
 
-            result.append({
-                "id": room.id,
-                "room_name": room.room_name,
-                "code": room.code,
-                "role": role,
-                "thumb_image_url": room.thumb_image_url,
-                "created_at": room.created_at,
-                "updated_at": room.updated_at,
-            })
+            if room.id not in rooms_map:
 
-        return result
+                rooms_map[room.id] = {
+                    "id": room.id,
+                    "room_name": room.room_name,
+                    "code": room.code,
+                    "role": role,
+                    "thumb_image_url": room.thumb_image_url,
+                    "created_at": room.created_at,
+                    "updated_at": room.updated_at,
+                    "members_profilepics": []
+                }
+
+            rooms_map[room.id]["members_profilepics"].append(
+                profilepic
+            )
+
+        return list(rooms_map.values())
 
     except Exception:
         raise

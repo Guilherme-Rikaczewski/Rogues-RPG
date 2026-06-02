@@ -21,11 +21,21 @@ class DiceRollMessage(BaseModel):
         'dices': [],
         'total': 0
     }
+    only_for_user_id: int | None = None
+
+
+class ChatMessage(BaseModel):
+    type: Literal["chat.message"]
+
+    as_character: str | None = None
+    message: str
+    only_for_user_id: int | None = None
 
 
 WebSocketMessage = Union[
     AssetMoveMessage,
-    DiceRollMessage
+    DiceRollMessage,
+    ChatMessage
 ]
 
 

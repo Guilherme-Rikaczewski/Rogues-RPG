@@ -18,6 +18,8 @@ class UserUpdate(BaseModel):
     email: EmailStr | None = None
     username: Username | None = None
     password: Password | None = None
+    last_room_enter_at: datetime | None = None
+    seconds_played: int | None = None
 
 
 class UserResponse(BaseModel):

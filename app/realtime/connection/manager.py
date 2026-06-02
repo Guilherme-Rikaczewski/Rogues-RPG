@@ -1,6 +1,7 @@
 from fastapi import WebSocket
 from app.schemas.types import RoomCode
-
+from app.schemas.tabletop_schema import WebSocketMessage
+import traceback
 
 class ConnectionManager:
     def __init__(self):
@@ -56,7 +57,7 @@ class ConnectionManager:
         self,
         room_code: RoomCode,
         user_id: int,
-        message: dict
+        message: WebSocketMessage | dict
     ):
         room = self.active_connections.get(room_code)
 
@@ -78,13 +79,20 @@ class ConnectionManager:
         if not room:
             return
 
+        disconnected_users = []
         for user_id, webscoket in room.items():
             try:
                 await webscoket.send_json(message)
             except Exception:
-                self.disconnect(
-                    room_code, user_id, active_websocket=True
-                )
+                disconnected_users.append(user_id)
+                traceback.print_exc()
+
+        for user_id in disconnected_users:
+            self.disconnect(
+                room_code,
+                user_id,
+                active_websocket=True
+            )
 
 
 manager = ConnectionManager()
