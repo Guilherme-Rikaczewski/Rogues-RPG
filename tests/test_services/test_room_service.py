@@ -375,8 +375,8 @@ async def test_upload_room_thumb_image_updates_room_and_user_storage(
     db = MagicMock()
     db.execute = AsyncMock(
         side_effect=[
-            make_scalar_result(room),
             make_scalar_result(user),
+            make_scalar_result(room),
         ]
     )
     db.commit = AsyncMock()
@@ -414,7 +414,16 @@ async def test_upload_room_thumb_image_updates_room_and_user_storage(
 async def test_upload_room_thumb_image_returns_none_when_room_is_missing(
     mock_upload_image
 ):
-    db = make_db_with_scalar(None)
+    db = MagicMock()
+    db.execute = AsyncMock(
+        side_effect=[
+            make_scalar_result(make_user()),
+            make_scalar_result(None),
+        ]
+    )
+    db.commit = AsyncMock()
+    db.refresh = AsyncMock()
+    db.rollback = AsyncMock()
     file = SimpleNamespace(file=MagicMock())
 
     result = await upload_room_thumb_image(db, 999, 10, file)
@@ -431,27 +440,13 @@ async def test_upload_room_thumb_image_returns_none_when_room_is_missing(
 async def test_upload_room_thumb_image_returns_none_when_user_is_missing(
     mock_upload_image
 ):
-    db = MagicMock()
-    db.execute = AsyncMock(
-        side_effect=[
-            make_scalar_result(make_room()),
-            make_scalar_result(None),
-        ]
-    )
-    db.commit = AsyncMock()
-    db.refresh = AsyncMock()
-    db.rollback = AsyncMock()
+    db = make_db_with_scalar(None)
     file = SimpleNamespace(file=MagicMock())
-    mock_upload_image.return_value = {
-        "url": "https://cdn.test/thumb.png",
-        "size": 500,
-        "public_id": "thumb-public-id",
-    }
 
     result = await upload_room_thumb_image(db, 1, 999, file)
 
     assert result is None
-    mock_upload_image.assert_called_once()
+    mock_upload_image.assert_not_called()
     db.commit.assert_not_awaited()
     db.refresh.assert_not_awaited()
     db.rollback.assert_not_awaited()
@@ -469,8 +464,8 @@ async def test_upload_room_thumb_image_deletes_image_when_storage_exceeds_limit(
     db = MagicMock()
     db.execute = AsyncMock(
         side_effect=[
-            make_scalar_result(room),
             make_scalar_result(user),
+            make_scalar_result(room),
         ]
     )
     db.commit = AsyncMock()
@@ -500,8 +495,8 @@ async def test_upload_room_thumb_image_rolls_back_and_reraises_on_error(
     db = MagicMock()
     db.execute = AsyncMock(
         side_effect=[
-            make_scalar_result(make_room()),
             make_scalar_result(make_user()),
+            make_scalar_result(make_room()),
         ]
     )
     db.commit = AsyncMock(side_effect=RuntimeError("commit failed"))
