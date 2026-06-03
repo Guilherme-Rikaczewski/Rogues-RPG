@@ -182,7 +182,7 @@ async def get_asset(
         raise
 
 
-async def delete_asset(
+async def delete_asset_in_db(
     db: AsyncSession,
     asset_id: int
 ) -> bool:
@@ -210,3 +210,7 @@ async def delete_asset(
 
         await db.rollback()
         raise
+
+
+async def delete_asset_image():
+    pass
