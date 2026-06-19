@@ -17,4 +17,4 @@ Rogues RPG é um projeto com o objetivo de prestar o serviço de um hub online p
 <img src="imgs\Logotipo_Dice_Tales.webp" alt="Logo DiceTales" width="170px" style="margin-bottom: 20px;">
 <img src="imgs\sanfona.webp" alt="Ícone Ilustrativo" width="170px">
 </div> -->
-<img src="imgs\banner.webp" alt="Ícone Bootstrap" height="212px">
+<img src="imgs\banner.webp" alt="Banner Ilustrativo" height="212px">
