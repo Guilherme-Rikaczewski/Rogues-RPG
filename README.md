@@ -14,6 +14,6 @@ Rogues RPG é um projeto com o objetivo de prestar o serviço de um hub online p
 
 <div style="display: inline-block;">
 <img src="imgs\alaude.webp" alt="Ícone Node.js" width="170px">
-<img src="imgs\Logotipo_Dice_Tales.webp" alt="Ícone React" width="170px" style="margin-bottom: 20px;">
+<img src="imgs\Logotipo_Dice_Tales.webp" alt="Ícone React" width="170px" align="middle">
 <img src="imgs\sanfona.webp" alt="Ícone Bootstrap" width="170px">
 </div>
