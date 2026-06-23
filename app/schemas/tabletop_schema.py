@@ -3,12 +3,25 @@ from typing import Union, Literal
 import enum
 
 
+class TabletopLayer(str, enum.Enum):
+    master = "master"
+    players = "players"
+    map = "map"
+
+
 class AssetMoveMessage(BaseModel):
     type: Literal["asset.move"]
 
     asset_id: int
     x: str
     y: str
+
+
+class AssetChangeLayerMessage(BaseModel):
+    type: Literal["asset.change_layer"]
+
+    asset_id: int
+    layer: TabletopLayer
 
 
 class DiceRollMessage(BaseModel):
@@ -34,15 +47,10 @@ class ChatMessage(BaseModel):
 
 WebSocketMessage = Union[
     AssetMoveMessage,
+    AssetChangeLayerMessage,
     DiceRollMessage,
-    ChatMessage
+    ChatMessage,
 ]
-
-
-class TabletopLayer(str, enum.Enum):
-    master = "master"
-    players = "players"
-    map = "map"
 
 
 class AssetCreate(BaseModel):
