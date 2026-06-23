@@ -1,18 +1,40 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 from app.models.sheets import Sheet
+from app.models.sheet_user import SheetUser
 from app.models.tabletop_assets import TabletopAssets
 from app.services.tabletop_service import create_asset, upload_asset_image
-from app.schemas.sheet_schema import SheetCreate, SheetUpdate, GameSystem
+from app.schemas.sheet_schema import (
+    SheetCreate, SheetUpdate, GameSystem, ListModeSheetResponse
+)
 from app.schemas.tabletop_schema import AssetCreate
-from app.schemas.dnd.dnd_sheet_schema import DnDSheet
-from app.utils.user_file_manager import upload_image, delete_image
+from app.schemas.dnd.dnd_sheet_schema import DnDSheet, DnDSheetUpdate
+from app.utils.user_file_manager import delete_image
 from fastapi import UploadFile
 
 
-SHEET_VALIDATOR_MASK = {
+CREATE_SHEET_VALIDATOR_MASK = {
     GameSystem.DND5e: DnDSheet
 }
+
+UPDATE_SHEET_VALIDATOR_MASK = {
+    GameSystem.DND5e: DnDSheetUpdate
+}
+
+
+def deep_update(original: dict, updates: dict):
+    for key, value in updates.items():
+
+        if (
+            key in original
+            and isinstance(original[key], dict)
+            and isinstance(value, dict)
+        ):
+            deep_update(original[key], value)
+
+        else:
+            original[key] = value
 
 
 async def create_sheet(
@@ -20,7 +42,7 @@ async def create_sheet(
     sheet_data: SheetCreate
 ) -> Sheet | None:
 
-    system_sheet_schema = SHEET_VALIDATOR_MASK.get(sheet_data.game_system)
+    system_sheet_schema = CREATE_SHEET_VALIDATOR_MASK.get(sheet_data.game_system)
 
     if not system_sheet_schema:
         raise ValueError(
@@ -35,8 +57,6 @@ async def create_sheet(
         game_system=sheet_data.game_system,
         sheet_type=sheet_data.sheet_type,
         name=sheet_data.name,
-        token_image_url=sheet_data.token_image_url,
-        token_image_public_id=sheet_data.token_image_public_id,
         content=validated_content.model_dump()
     )
 
@@ -68,7 +88,7 @@ async def update_sheet(
         if not sheet:
             return None
 
-        system_sheet_schema = SHEET_VALIDATOR_MASK.get(
+        system_sheet_schema = UPDATE_SHEET_VALIDATOR_MASK.get(
             sheet.game_system  # type: ignore
         )
 
@@ -88,7 +108,16 @@ async def update_sheet(
         )
 
         if "content" in update_data:
-            update_data['content'] = validated.model_dump()
+            partial_content = validated.model_dump(
+                exclude_unset=True,
+                exclude_none=True
+            )
+
+            deep_update(sheet.content, partial_content)
+
+            flag_modified(sheet, "content")
+
+            del update_data['content']
 
         for k, v in update_data.items():
 
@@ -110,14 +139,15 @@ async def update_sheet(
 async def upload_sheet_asset_image(
     db: AsyncSession,
     user_id: int,
-    room_id: int,
+    room_id: int | None,
+    sheet_id: int,
     file: UploadFile,
 ) -> TabletopAssets | None:
 
     try:
         asset = await create_asset(
             db,
-            AssetCreate(room_id=room_id, user_id=user_id)
+            AssetCreate(room_id=room_id, user_id=user_id, sheet_id=sheet_id)
         )
 
         uploaded_asset = await upload_asset_image(
@@ -148,7 +178,73 @@ async def get_sheet(
         if not sheet:
             return None
 
+        asset_result = await db.execute(
+            select(TabletopAssets).where(TabletopAssets.sheet_id == sheet_id)
+        )
+        rows = asset_result.all()
+
+        print("ROWS RAW:", rows)
+        print("COUNT:", len(rows))
+
+        asset = asset_result.scalar_one_or_none()
+
+        if asset:
+            setattr(
+                sheet,
+                'asset_image_url',
+                asset.asset_image_url
+            )
+
         return sheet
+
+    except Exception:
+        raise
+
+
+async def get_all_sheets_from_user(
+    db: AsyncSession,
+    user_id: int
+) -> list[ListModeSheetResponse]:
+
+    try:
+        result = await db.execute(
+            select(
+                Sheet.id,
+                Sheet.game_system,
+                Sheet.sheet_type,
+                Sheet.name,
+                SheetUser.owner,
+                TabletopAssets.asset_image_url
+            )
+            .join(
+                SheetUser,
+                SheetUser.sheet_id == Sheet.id
+            )
+            .outerjoin(
+                TabletopAssets,
+                TabletopAssets.sheet_id == Sheet.id
+            )
+            .where(
+                SheetUser.user_id == user_id
+            )
+            .order_by(
+                Sheet.name
+            )
+        )
+
+        rows = result.all()
+
+        return [
+            ListModeSheetResponse(
+                id=row.id,
+                game_system=row.game_system,
+                sheet_type=row.sheet_type,
+                name=row.name,
+                owner=row.owner,
+                asset_image_url=row.asset_image_url
+            )
+            for row in rows
+        ]
 
     except Exception:
         raise
@@ -168,6 +264,15 @@ async def delete_sheet(
 
         if not sheet:
             return False
+
+        asset_result = await db.execute(
+            select(TabletopAssets).where(TabletopAssets.sheet_id == sheet_id)
+        )
+
+        asset = asset_result.scalar_one_or_none()
+        if asset:
+            delete_image(public_id=asset.asset_image_public_id)
+            await db.delete(asset)
 
         await db.delete(sheet)
         await db.commit()

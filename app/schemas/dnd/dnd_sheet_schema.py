@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from app.schemas.types import make_partial
-import dnd_types as dt
+import app.schemas.dnd.dnd_types as dt
 
 
 class DnDSheet(BaseModel):

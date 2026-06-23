@@ -25,7 +25,12 @@ class TabletopAssets(Base):
     room_id = Column(
         Integer,
         ForeignKey("rooms.id", ondelete="CASCADE"),
-        nullable=False,
+        index=True
+    )
+
+    sheet_id = Column(
+        Integer,
+        ForeignKey("sheets.id", ondelete="CASCADE"),
         index=True
     )
 
