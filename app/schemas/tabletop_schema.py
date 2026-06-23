@@ -3,12 +3,25 @@ from typing import Union, Literal
 import enum
 
 
+class TabletopLayer(str, enum.Enum):
+    master = "master"
+    players = "players"
+    map = "map"
+
+
 class AssetMoveMessage(BaseModel):
     type: Literal["asset.move"]
 
     asset_id: int
     x: str
     y: str
+
+
+class AssetChangeLayerMessage(BaseModel):
+    type: Literal["asset.change_layer"]
+
+    asset_id: int
+    layer: TabletopLayer
 
 
 class DiceRollMessage(BaseModel):
@@ -34,22 +47,17 @@ class ChatMessage(BaseModel):
 
 WebSocketMessage = Union[
     AssetMoveMessage,
+    AssetChangeLayerMessage,
     DiceRollMessage,
-    ChatMessage
+    ChatMessage,
 ]
-
-
-class TabletopLayer(str, enum.Enum):
-    master = "master"
-    players = "players"
-    map = "map"
 
 
 class AssetCreate(BaseModel):
     asset_image_url: str = ''
     asset_image_public_id: str = ''
     asset_image_file_name: str = ''
-    layer: TabletopLayer
+    layer: TabletopLayer | None = None
     room_id: int
     user_id: int
 
@@ -57,6 +65,7 @@ class AssetCreate(BaseModel):
 class AssetUpdate(BaseModel):
     position_x: str | None = None
     position_y: str | None = None
+    layer: TabletopLayer | None = None
 
 
 class TabletopAssetResponse(BaseModel):
@@ -66,6 +75,6 @@ class TabletopAssetResponse(BaseModel):
     asset_image_file_name: str = ''
     position_x: str | None
     position_y: str | None
-    layer: TabletopLayer
+    layer: TabletopLayer | None
 
     model_config = {'from_attributes': True}

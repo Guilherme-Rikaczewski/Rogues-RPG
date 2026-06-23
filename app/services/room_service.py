@@ -258,6 +258,14 @@ async def upload_room_thumb_image(
 ) -> Room | None:
 
     try:
+        user_result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            return None
 
         room_result = await db.execute(
             select(Room).where(Room.id == room_id)
@@ -276,15 +284,6 @@ async def upload_room_thumb_image(
         )
 
         MAX_ALLOWED_FOR_USER = 50 * 1024 * 1024
-
-        user_result = await db.execute(
-            select(User).where(User.id == user_id)
-        )
-
-        user = user_result.scalar_one_or_none()
-
-        if not user:
-            return None
 
         storage_without_thumb = max(
             0,

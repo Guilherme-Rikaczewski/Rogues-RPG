@@ -1,5 +1,11 @@
-from unittest.mock import patch, MagicMock
+from datetime import datetime, timezone
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
+
+from app.db.session import get_db
 from app.main import app
 from app.services.auth_service import get_current_user_id
 
@@ -7,28 +13,57 @@ from app.services.auth_service import get_current_user_id
 client = TestClient(app)
 
 
-def override_get_current_user_id():
+@pytest.fixture(autouse=True)
+def clear_dependency_overrides():
+    app.dependency_overrides.clear()
+    yield
+    app.dependency_overrides.clear()
+
+
+async def override_get_db():
+    yield MagicMock()
+
+
+async def override_get_current_user_id():
     return 1
 
 
-app.dependency_overrides[get_current_user_id] = override_get_current_user_id
+def make_room(**overrides):
+    now = datetime.now(timezone.utc)
+    data = {
+        "id": 10,
+        "room_name": "Sala Teste",
+        "code": "ABC123",
+        "thumb_image_url": "",
+        "created_at": now,
+        "updated_at": now,
+    }
+    data.update(overrides)
+    return SimpleNamespace(**data)
 
 
-@patch("app.routers.room_router.rus.create_room_user")
-@patch("app.routers.room_router.rs.create_room")
+def make_room_user(**overrides):
+    data = {
+        "room_id": 10,
+        "role": "master",
+    }
+    data.update(overrides)
+    return SimpleNamespace(**data)
+
+
+@patch("app.routers.room_router.rus.create_room_user", new_callable=AsyncMock)
+@patch("app.routers.room_router.rs.create_room", new_callable=AsyncMock)
 def test_create_room(
     mock_create_room,
     mock_create_room_user
 ):
-    fake_room = MagicMock()
-    fake_room.id = 10
-    fake_room.room_name = "Sala Teste"
-    fake_room.code = "ABC123"
-    fake_room.thumb_image_url = "image.png"
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user_id] = (
+        override_get_current_user_id
+    )
 
-    fake_room_user = MagicMock()
-    fake_room_user.role = "master"
-
+    fake_room = make_room()
+    fake_room_user = make_room_user()
     mock_create_room.return_value = fake_room
     mock_create_room_user.return_value = fake_room_user
 
@@ -45,27 +80,27 @@ def test_create_room(
 
     assert response.json()["role"] == "master"
 
-    mock_create_room.assert_called_once()
+    mock_create_room.assert_awaited_once()
 
-    mock_create_room_user.assert_called_once()
+    mock_create_room_user.assert_awaited_once()
 
 
-@patch("app.routers.room_router.rs.get_room")
-@patch("app.routers.room_router.rus.join_room_by_code")
+@patch("app.routers.room_router.rs.get_room", new_callable=AsyncMock)
+@patch("app.routers.room_router.rus.join_room_by_code", new_callable=AsyncMock)
 def test_join_room(
     mock_join_room_by_code,
     mock_get_room
 ):
-    fake_room_user = MagicMock()
-    fake_room_user.room_id = 10
-    fake_room_user.role = "player"
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user_id] = (
+        override_get_current_user_id
+    )
 
-    fake_room = MagicMock()
-    fake_room.id = 10
-    fake_room.room_name = "Sala RPG"
-    fake_room.code = "ABC123"
-    fake_room.thumb_image_url = "thumb.png"
-
+    fake_room_user = make_room_user(role="player")
+    fake_room = make_room(
+        room_name="Sala RPG",
+        thumb_image_url="thumb.png"
+    )
     mock_join_room_by_code.return_value = fake_room_user
     mock_get_room.return_value = fake_room
 
@@ -77,6 +112,6 @@ def test_join_room(
 
     assert response.json()["role"] == "player"
 
-    mock_join_room_by_code.assert_called_once()
+    mock_join_room_by_code.assert_awaited_once()
 
-    mock_get_room.assert_called_once()
+    mock_get_room.assert_awaited_once()
