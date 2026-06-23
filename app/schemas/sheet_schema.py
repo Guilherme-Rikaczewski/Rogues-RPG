@@ -7,8 +7,12 @@ class SheetType(str, enum.Enum):
     player = "player"
 
 
+class GameSystem(str, enum.Enum):
+    DND5e = "D&D5e"
+
+
 class SheetCreate(BaseModel):
-    game_system: str
+    game_system: GameSystem
     sheet_type: SheetType
     name: str
     token_image_url: str = ""
@@ -30,7 +34,7 @@ class SheetUpdate(BaseModel):
 
 class SheetResponse(BaseModel):
     id: int
-    game_system: str
+    game_system: GameSystem
     sheet_type: SheetType
     name: str
     token_image_url: str
@@ -42,7 +46,7 @@ class SheetResponse(BaseModel):
 
 class ListModeSheetResponse(BaseModel):
     id: int
-    game_system: str
+    game_system: GameSystem
     sheet_type: SheetType
     name: str
     token_image_url: str

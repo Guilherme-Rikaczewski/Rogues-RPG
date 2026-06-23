@@ -16,7 +16,6 @@ class TabletopAssets(Base):
 
     layer = Column(
         Enum(TabletopLayer, name="tabletop_assets_layer"),
-        nullable=False,
     )
 
     position_x = Column(String(256))

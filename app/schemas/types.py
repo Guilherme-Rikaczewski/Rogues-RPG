@@ -1,4 +1,4 @@
-from pydantic import StringConstraints, AfterValidator
+from pydantic import StringConstraints, AfterValidator, create_model
 from typing import Annotated
 
 
@@ -13,6 +13,19 @@ def validate_password(password: str) -> str:
         raise ValueError("Password must contain a number")
 
     return password
+
+
+def make_partial(model):
+    return create_model(
+        f"{model.__name__}Update",
+        **{
+            name: (
+                field.annotation | None,
+                None
+            )
+            for name, field in model.model_fields.items()
+        }
+    )
 
 
 Username = Annotated[
