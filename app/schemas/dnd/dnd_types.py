@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import enum
 
 
@@ -91,7 +91,9 @@ class Attack(BaseModel):
     range: str | None = None
     magic_bonus: int = 0
     critical_margin: int = 20
-    damage: list[Damage] = [Damage()]
+    damage: list[Damage] = Field(
+        default_factory=lambda: [Damage()]
+    )
     save_throw: SaveThrow
     description: str | None = None
 
@@ -113,7 +115,9 @@ class Item(BaseModel):
 
 class Inventory(BaseModel):
     money: Money
-    items: list[Item] = []
+    items: list[Item] = Field(
+        default_factory=list
+    )
 
 
 class Trait(BaseModel):
@@ -141,7 +145,9 @@ class SpellComponents(BaseModel):
 
 class SpellAttack(BaseModel):
     is_an_attack: bool = False
-    damage: list[Damage] = [Damage()]
+    damage: list[Damage] = Field(
+        default_factory=lambda: [Damage()]
+    )
     healing: str | None = None
     save_throw: SaveThrow
     add_attribute_mod_on_damage_or_heal: bool = False

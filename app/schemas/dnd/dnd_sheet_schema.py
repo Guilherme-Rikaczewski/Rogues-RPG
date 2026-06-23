@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from app.schemas.types import make_partial
 import dnd_types as dt
 
 
@@ -41,9 +42,16 @@ class DnDSheet(BaseModel):
     skills: dt.Skills
     spell_slots: dt.SpellSlots
 
-    customizable_features: list[dt.CustomizableFeature] = []
-    tool_proficiencies: list[dt.ToolProficiencie] = []
-    other_proficiencies: list[dt.OtherProficiencie] = []
-    attacks: list[dt.Attack] = []
-    traits: list[dt.Trait] = []
-    spells: list[dt.Spell] = []
+    customizable_features: list[dt.CustomizableFeature] = Field(
+        default_factory=list
+    )
+    tool_proficiencies: list[dt.ToolProficiencie] = Field(default_factory=list)
+    other_proficiencies: list[dt.OtherProficiencie] = Field(
+        default_factory=list
+        )
+    attacks: list[dt.Attack] = Field(default_factory=list)
+    traits: list[dt.Trait] = Field(default_factory=list)
+    spells: list[dt.Spell] = Field(default_factory=list)
+
+
+DnDSheetUpdate = make_partial(DnDSheet)
