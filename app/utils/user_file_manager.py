@@ -6,7 +6,7 @@ import cloudinary.uploader
 
 load_dotenv()
 
-CLOUDINARY_API_KEY= os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 CLOUDINARY_NAME = os.getenv("CLOUDINARY_NAME")
 
@@ -18,7 +18,9 @@ config = cloudinary.config(
 )
 
 
-def upload_image(file, user_id, img_id, extra_folder='', max_width = 2048, max_height = 2048) -> dict:
+def upload_image(
+    file, user_id, img_id, extra_folder='', max_width=2048, max_height=2048
+) -> dict:
     result = cloudinary.uploader.upload(
         file,
         folder=f'users/user_{user_id}{extra_folder}',

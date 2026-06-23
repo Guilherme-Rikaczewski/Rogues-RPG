@@ -15,10 +15,6 @@ class Sheet(Base):
 
     name = Column(Text, nullable=False)
 
-    token_image_url = Column(Text, nullable=False, default='')
-
-    token_image_public_id = Column(Text, nullable=False, default='')
-
     content = Column(
         MutableDict.as_mutable(JSONB),
         nullable=False,

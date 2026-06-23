@@ -58,7 +58,8 @@ class AssetCreate(BaseModel):
     asset_image_public_id: str = ''
     asset_image_file_name: str = ''
     layer: TabletopLayer | None = None
-    room_id: int
+    room_id: int | None = None
+    sheet_id: int | None = None
     user_id: int
 
 

@@ -15,8 +15,6 @@ class SheetCreate(BaseModel):
     game_system: GameSystem
     sheet_type: SheetType
     name: str
-    token_image_url: str = ""
-    token_image_public_id: str = ""
     content: dict
 
 # lembra de validar com algo como 
@@ -25,11 +23,9 @@ class SheetCreate(BaseModel):
 
 
 class SheetUpdate(BaseModel):
-    sheet_type: SheetType | None
-    name: str | None
-    token_image_url: str | None
-    token_image_public_id: str | None
-    content: dict | None
+    sheet_type: SheetType | None = None
+    name: str | None = None
+    content: dict | None = None
 
 
 class SheetResponse(BaseModel):
@@ -37,8 +33,7 @@ class SheetResponse(BaseModel):
     game_system: GameSystem
     sheet_type: SheetType
     name: str
-    token_image_url: str
-    token_image_public_id: str
+    asset_image_url: str | None = None
     content: dict
 
     model_config = {'from_attributes': True}
@@ -48,9 +43,8 @@ class ListModeSheetResponse(BaseModel):
     id: int
     game_system: GameSystem
     sheet_type: SheetType
+    asset_image_url: str | None = None
     name: str
-    token_image_url: str
-    token_image_public_id: str
     owner: bool
 
     model_config = {'from_attributes': True}

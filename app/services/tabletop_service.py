@@ -25,11 +25,11 @@ def roll_dices(quantity: int, sides: int):
 
 async def create_asset(
     db: AsyncSession,
-    user_data: AssetCreate
+    asset_data: AssetCreate
 ) -> TabletopAssets:
 
     asset = TabletopAssets(
-        **user_data.model_dump()
+        **asset_data.model_dump()
     )
 
     db.add(asset)
@@ -182,7 +182,7 @@ async def get_asset(
         raise
 
 
-async def delete_asset_in_db(
+async def delete_asset(
     db: AsyncSession,
     asset_id: int
 ) -> bool:
@@ -200,6 +200,8 @@ async def delete_asset_in_db(
         if not asset:
             return False
 
+        delete_image(public_id=asset.asset_image_public_id)
+
         await db.delete(asset)
 
         await db.commit()
@@ -210,7 +212,3 @@ async def delete_asset_in_db(
 
         await db.rollback()
         raise
-
-
-async def delete_asset_image():
-    pass
