@@ -23,6 +23,7 @@ from app.schemas.user_schema import (
 from app.schemas.tabletop_schema import (
     AssetUpdate,
     AssetMoveMessage,
+    AssetChangeLayerMessage,
     DiceRollMessage,
     ChatMessage,
     WebSocketMessage
@@ -38,6 +39,7 @@ router = APIRouter(
 
 MESSAGE_TYPES = {
     "asset.move": AssetMoveMessage,
+    "asset.change_layer": AssetChangeLayerMessage,
     "dice.roll": DiceRollMessage,
     "chat.message": ChatMessage,
 }
@@ -128,6 +130,29 @@ async def tabletop_socket(
                             'payload': {
                                 'message': (
                                     "Can't move the asset"
+                                )
+                            }
+                        }
+                    )
+                    continue
+            elif isinstance(data, AssetChangeLayerMessage):
+                updated_asset = await update_asset(
+                    db,
+                    data.asset_id,
+                    AssetUpdate(
+                        layer=data.layer
+                    )
+                )
+
+                if not updated_asset:
+                    await manager.send_to_user(
+                        room_code,
+                        user_id,
+                        {
+                            'event': 'error',
+                            'payload': {
+                                'message': (
+                                    "Can't change the asset layer"
                                 )
                             }
                         }
