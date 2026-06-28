@@ -11,7 +11,7 @@ from app.schemas.sheet_schema import (
     SheetCreate,
     SheetUpdate,
     SheetResponse,
-    ListModeSheetResponse
+    RecentSheetsResponse
 )
 from app.schemas.tabletop_schema import TabletopAssetResponse
 import app.services.sheet_service as ss
@@ -134,6 +134,10 @@ async def read(
                 detail='Sheet not found'
             )
 
+        await sus.update_sheet_last_access(
+            db, user_id, sheet_id
+        )
+
         return sheet
 
     except HTTPException:
@@ -154,6 +158,36 @@ async def read_all_sheets_from_user(
 
     try:
         sheets = await ss.get_all_sheets_from_user(
+            db,
+            user_id
+        )
+
+        if not sheets:
+            raise HTTPException(
+                404,
+                detail='Sheets not found'
+            )
+
+        return sheets
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            500,
+            detail='Internal server error'
+        )
+
+
+@router.get('/recent/', response_model=RecentSheetsResponse)
+async def read_recent_sheets_from_user(
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+
+    try:
+        sheets = await ss.get_recent_sheets_from_user(
             db,
             user_id
         )
@@ -278,6 +312,50 @@ async def update_sheet_asset_image(
 
     except Exception as error:
 
+        raise HTTPException(
+            500,
+            detail=f'Internal server error {error}'
+        )
+
+
+@router.post(
+    "/share/{sheet_id}/to_user/{receiver_id}",
+    response_model=SheetResponse
+)
+async def share_sheet(
+    sheet_id: int,
+    receiver_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+
+    try:
+        user_can_share = await sus.check_user_acces_for_sheet(
+            db, user_id=user_id, sheet_id=sheet_id
+        )
+
+        if not user_can_share:
+            raise HTTPException(
+                403,
+                detail='Permission denied'
+            )
+
+        sheet_user = await sus.create_sheet_user(
+            db,
+            sheet_id,
+            receiver_id,
+            owner=False
+        )
+
+        if not sheet_user:
+            raise HTTPException(
+                400,
+                detail="Can't create sheet"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as error:
         raise HTTPException(
             500,
             detail=f'Internal server error {error}'

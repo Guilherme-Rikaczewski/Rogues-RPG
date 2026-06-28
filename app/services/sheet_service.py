@@ -1,12 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import flag_modified
 from app.models.sheets import Sheet
 from app.models.sheet_user import SheetUser
 from app.models.tabletop_assets import TabletopAssets
 from app.services.tabletop_service import create_asset, upload_asset_image
 from app.schemas.sheet_schema import (
-    SheetCreate, SheetUpdate, GameSystem, ListModeSheetResponse
+    SheetCreate, SheetUpdate, GameSystem, ListModeSheetResponse,
+    RecentSheetsResponse
 )
 from app.schemas.tabletop_schema import AssetCreate
 from app.schemas.dnd.dnd_sheet_schema import DnDSheet, DnDSheetUpdate
@@ -181,10 +183,6 @@ async def get_sheet(
         asset_result = await db.execute(
             select(TabletopAssets).where(TabletopAssets.sheet_id == sheet_id)
         )
-        rows = asset_result.all()
-
-        print("ROWS RAW:", rows)
-        print("COUNT:", len(rows))
 
         asset = asset_result.scalar_one_or_none()
 
@@ -245,6 +243,78 @@ async def get_all_sheets_from_user(
             )
             for row in rows
         ]
+
+    except Exception:
+        raise
+
+
+async def get_recent_sheets_from_user(
+    db: AsyncSession,
+    user_id: int
+) -> RecentSheetsResponse:
+    try:
+        ranked = (
+            select(
+                Sheet.id.label("id"),
+                Sheet.game_system.label("game_system"),
+                Sheet.sheet_type.label("sheet_type"),
+                Sheet.name.label("name"),
+                SheetUser.owner.label("owner"),
+                TabletopAssets.asset_image_url.label("asset_image_url"),
+                func.row_number()
+                .over(
+                    partition_by=SheetUser.owner,
+                    order_by=SheetUser.last_access.desc()
+                )
+                .label("rn")
+            )
+            .join(
+                SheetUser,
+                SheetUser.sheet_id == Sheet.id
+            )
+            .outerjoin(
+                TabletopAssets,
+                TabletopAssets.sheet_id == Sheet.id
+            )
+            .where(
+                SheetUser.user_id == user_id
+            )
+            .subquery()
+        )
+
+        result = await db.execute(
+            select(ranked)
+            .where(ranked.c.rn <= 5)
+            .order_by(
+                ranked.c.owner.desc(),
+                ranked.c.rn
+            )
+        )
+
+        rows = result.all()
+
+        owned = []
+        shared = []
+
+        for row in rows:
+            sheet = ListModeSheetResponse(
+                id=row.id,
+                game_system=row.game_system,
+                sheet_type=row.sheet_type,
+                name=row.name,
+                owner=row.owner,
+                asset_image_url=row.asset_image_url
+            )
+
+            if row.owner:
+                owned.append(sheet)
+            else:
+                shared.append(sheet)
+
+        return RecentSheetsResponse(
+            owned=owned,
+            shared=shared
+        )
 
     except Exception:
         raise
