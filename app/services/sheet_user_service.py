@@ -1,8 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.sheet_user import SheetUser
-from app.models.users import User
-from app.models.sheets import Sheet
-from sqlalchemy import select
+from sqlalchemy import select, update, func
 
 
 async def create_sheet_user(
@@ -28,10 +26,10 @@ async def create_sheet_user(
 
         return sheet_user
 
-    except Exception:
+    except Exception as error:
 
         await db.rollback()
-        raise
+        raise error
 
 
 async def check_user_acces_for_sheet(
@@ -51,7 +49,30 @@ async def check_user_acces_for_sheet(
 
         return sheet_user is not None
 
-    except Exception:
+    except Exception as error:
 
         await db.rollback()
-        raise
+        raise error
+
+
+async def update_sheet_last_access(
+    db: AsyncSession,
+    user_id: int,
+    sheet_id: int,
+) -> None:
+    try:
+        await db.execute(
+            update(SheetUser)
+            .where(
+                SheetUser.user_id == user_id,
+                SheetUser.sheet_id == sheet_id
+            )
+            .values(last_access=func.now())
+        )
+
+        await db.commit()
+
+    except Exception as error:
+
+        await db.rollback()
+        raise error

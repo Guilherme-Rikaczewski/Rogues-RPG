@@ -48,3 +48,10 @@ class ListModeSheetResponse(BaseModel):
     owner: bool
 
     model_config = {'from_attributes': True}
+
+
+class RecentSheetsResponse(BaseModel):
+    owned: list[ListModeSheetResponse]
+    shared: list[ListModeSheetResponse]
+
+    model_config = {'from_attributes': True}

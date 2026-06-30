@@ -31,6 +31,7 @@ class TabletopAssets(Base):
     sheet_id = Column(
         Integer,
         ForeignKey("sheets.id", ondelete="CASCADE"),
+        unique=True,
         index=True
     )
 

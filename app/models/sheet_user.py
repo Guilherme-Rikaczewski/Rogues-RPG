@@ -12,6 +12,7 @@ class SheetUser(Base):
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+        index=True
     )
 
     sheet_id = Column(
