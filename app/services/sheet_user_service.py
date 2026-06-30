@@ -26,10 +26,10 @@ async def create_sheet_user(
 
         return sheet_user
 
-    except Exception:
+    except Exception as error:
 
         await db.rollback()
-        raise
+        raise error
 
 
 async def check_user_acces_for_sheet(
@@ -49,10 +49,10 @@ async def check_user_acces_for_sheet(
 
         return sheet_user is not None
 
-    except Exception:
+    except Exception as error:
 
         await db.rollback()
-        raise
+        raise error
 
 
 async def update_sheet_last_access(
@@ -72,7 +72,7 @@ async def update_sheet_last_access(
 
         await db.commit()
 
-    except Exception:
+    except Exception as error:
 
         await db.rollback()
-        raise
+        raise error

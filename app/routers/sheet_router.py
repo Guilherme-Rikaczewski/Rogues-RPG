@@ -318,10 +318,7 @@ async def update_sheet_asset_image(
         )
 
 
-@router.post(
-    "/share/{sheet_id}/to_user/{receiver_id}",
-    response_model=SheetResponse
-)
+@router.post("/share/{sheet_id}/to_user/{receiver_id}",)
 async def share_sheet(
     sheet_id: int,
     receiver_id: int,
@@ -338,6 +335,16 @@ async def share_sheet(
             raise HTTPException(
                 403,
                 detail='Permission denied'
+            )
+
+        sheet_is_already_shared = await sus.check_user_acces_for_sheet(
+            db, user_id=receiver_id, sheet_id=sheet_id
+        )
+
+        if sheet_is_already_shared:
+            raise HTTPException(
+                409,
+                detail='The sharing already exists'
             )
 
         sheet_user = await sus.create_sheet_user(
