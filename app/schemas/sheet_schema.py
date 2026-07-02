@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import enum
 
 
@@ -39,6 +39,14 @@ class SheetResponse(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class SheetRoomResponse(BaseModel):
+    id: int
+    room_name: str
+    code: str
+
+    model_config = {"from_attributes": True}
+
+
 class ListModeSheetResponse(BaseModel):
     id: int
     game_system: GameSystem
@@ -47,7 +55,11 @@ class ListModeSheetResponse(BaseModel):
     name: str
     owner: bool
 
-    model_config = {'from_attributes': True}
+    user_profilepics: list[str] = Field(default_factory=list)
+
+    room: SheetRoomResponse | None = None
+
+    model_config = {"from_attributes": True}
 
 
 class RecentSheetsResponse(BaseModel):
