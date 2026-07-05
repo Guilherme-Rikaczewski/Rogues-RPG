@@ -1,14 +1,21 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import flag_modified
 from app.models.sheets import Sheet
 from app.models.sheet_user import SheetUser
+from app.models.users import User
+from app.models.room_sheet import RoomSheet
+from app.models.room_users import RoomUser
+from app.models.rooms import Room
 from app.models.tabletop_assets import TabletopAssets
 from app.services.tabletop_service import create_asset, upload_asset_image
 from app.schemas.sheet_schema import (
-    SheetCreate, SheetUpdate, GameSystem, ListModeSheetResponse,
-    RecentSheetsResponse
+    SheetCreate,
+    SheetUpdate,
+    GameSystem,
+    ListModeSheetResponse,
+    RecentSheetsResponse,
+    SheetRoomResponse
 )
 from app.schemas.tabletop_schema import AssetCreate
 from app.schemas.dnd.dnd_sheet_schema import DnDSheet, DnDSheetUpdate
@@ -205,25 +212,90 @@ async def get_all_sheets_from_user(
 ) -> list[ListModeSheetResponse]:
 
     try:
+        profilepics_subq = (
+            select(
+                SheetUser.sheet_id.label("sheet_id"),
+                func.array_agg(
+                    User.profilepic_image_url
+                ).label("profilepics")
+            )
+            .join(
+                User,
+                User.id == SheetUser.user_id
+            )
+            .group_by(
+                SheetUser.sheet_id
+            )
+            .subquery()
+        )
+
+        room_ranked = (
+            select(
+                RoomSheet.sheet_id.label("sheet_id"),
+
+                Room.id.label("room_id"),
+                Room.room_name.label("room_name"),
+                Room.code.label("room_code"),
+
+                func.row_number()
+                .over(
+                    partition_by=RoomSheet.sheet_id,
+                    order_by=RoomUser.last_access.desc()
+                )
+                .label("rn")
+            )
+            .select_from(RoomSheet)
+            .join(
+                Room,
+                Room.id == RoomSheet.room_id
+            )
+            .join(
+                RoomUser,
+                (RoomUser.room_id == Room.id)
+                & (RoomUser.user_id == user_id)
+            )
+            .subquery()
+        )
+
+        latest_room_subq = (
+            select(room_ranked)
+            .where(room_ranked.c.rn == 1)
+            .subquery()
+        )
+
         result = await db.execute(
             select(
                 Sheet.id,
                 Sheet.game_system,
                 Sheet.sheet_type,
                 Sheet.name,
+
                 SheetUser.owner,
-                TabletopAssets.asset_image_url
+
+                TabletopAssets.asset_image_url,
+
+                profilepics_subq.c.profilepics,
+
+                latest_room_subq.c.room_id,
+                latest_room_subq.c.room_name,
+                latest_room_subq.c.room_code
             )
             .join(
                 SheetUser,
-                SheetUser.sheet_id == Sheet.id
+                (SheetUser.sheet_id == Sheet.id)
+                & (SheetUser.user_id == user_id)
             )
             .outerjoin(
                 TabletopAssets,
                 TabletopAssets.sheet_id == Sheet.id
             )
-            .where(
-                SheetUser.user_id == user_id
+            .outerjoin(
+                profilepics_subq,
+                profilepics_subq.c.sheet_id == Sheet.id
+            )
+            .outerjoin(
+                latest_room_subq,
+                latest_room_subq.c.sheet_id == Sheet.id
             )
             .order_by(
                 Sheet.name
@@ -239,7 +311,19 @@ async def get_all_sheets_from_user(
                 sheet_type=row.sheet_type,
                 name=row.name,
                 owner=row.owner,
-                asset_image_url=row.asset_image_url
+                asset_image_url=row.asset_image_url,
+
+                user_profilepics=row.profilepics or [],
+
+                room=(
+                    SheetRoomResponse(
+                        id=row.room_id,
+                        room_name=row.room_name,
+                        code=row.room_code
+                    )
+                    if row.room_id
+                    else None
+                )
             )
             for row in rows
         ]

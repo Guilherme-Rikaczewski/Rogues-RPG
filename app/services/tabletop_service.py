@@ -23,11 +23,23 @@ def roll_dices(quantity: int, sides: int):
     return dices
 
 
+def get_random_default_image() -> str:
+    urls = [
+        'asset_1_tmvhc1',
+        'asset_2_naesz7',
+        'asset_3_tk6gtv',
+        'asset_4_rzrqaq',
+        'asset_5_fico0g'
+    ]
+    index = random.randint(0, 4)
+    url = f'https://res.cloudinary.com/dmtuq3wg9/image/upload/v1783212403/{urls[index]}.png'
+    return url
+
+
 async def create_asset(
     db: AsyncSession,
     asset_data: AssetCreate
 ) -> TabletopAssets:
-
     asset = TabletopAssets(
         **asset_data.model_dump()
     )
