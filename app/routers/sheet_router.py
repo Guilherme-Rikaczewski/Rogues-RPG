@@ -13,9 +13,10 @@ from app.schemas.sheet_schema import (
     SheetResponse,
     RecentSheetsResponse
 )
-from app.schemas.tabletop_schema import TabletopAssetResponse
+from app.schemas.tabletop_schema import TabletopAssetResponse, AssetCreate
 import app.services.sheet_service as ss
 import app.services.sheet_user_service as sus
+import app.services.tabletop_service as ts
 from app.services.auth_service import get_current_user_id
 
 
@@ -41,9 +42,25 @@ async def create(
                 detail="Can't create sheet"
             )
 
+        asset = await ts.create_asset(
+            db,
+            AssetCreate(
+                room_id=None,
+                user_id=user_id,
+                sheet_id=new_sheet.id,  # type:ignore
+                asset_image_url=ts.get_random_default_image()
+            )
+        )
+
+        if not asset:
+            raise HTTPException(
+                400,
+                detail="Can't create asset for sheet"
+            )
+
         sheet_user = await sus.create_sheet_user(
             db,
-            new_sheet.id,
+            new_sheet.id,  # type:ignore
             user_id,
             owner=True
         )
@@ -54,7 +71,16 @@ async def create(
                 detail="Can't create sheet"
             )
 
-        return new_sheet
+        sheet_response = SheetResponse(
+            id=new_sheet.id,  # type:ignore
+            game_system=new_sheet.game_system,  # type:ignore
+            sheet_type=new_sheet.sheet_type,  # type:ignore
+            name=new_sheet.name,  # type:ignore
+            asset_image_url=asset.asset_image_url,  # type:ignore
+            content=new_sheet.content  # type:ignore
+        )
+
+        return sheet_response
 
     except HTTPException:
         raise
