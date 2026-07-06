@@ -143,3 +143,12 @@ RoomCode = Annotated[
         to_upper=True,
     )
 ]
+
+ColorHexCode = Annotated[
+    str,
+    StringConstraints(
+        max_length=7,
+        min_length=7,
+        strip_whitespace=True,
+    )
+]

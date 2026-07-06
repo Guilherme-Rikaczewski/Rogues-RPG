@@ -4,6 +4,7 @@ from app.routers import room_router
 from app.routers import auth_router
 from app.routers import ai_router
 from app.routers import sheet_router
+from app.routers import note_router
 from app.realtime.endpoints import tabletop
 from app.db.session import engine
 from app.db.base import Base
@@ -43,3 +44,4 @@ app.include_router(auth_router.router)
 app.include_router(ai_router.router)
 app.include_router(tabletop.router)
 app.include_router(sheet_router.router)
+app.include_router(note_router.router)
