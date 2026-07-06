@@ -15,7 +15,9 @@ async def create_note(
         tittle=note_data.tittle,
         content=note_data.content,
         user_id=user_id,
-        room_id=note_data.room_id
+        room_id=note_data.room_id,
+        position_x=note_data.position_x,
+        position_y=note_data.position_y
     )
 
     db.add(note)
@@ -115,7 +117,9 @@ async def get_all_notes_from_room(
                 id=row.id,  # type:ignore
                 color=row.color,  # type:ignore
                 tittle=row.tittle,  # type:ignore
-                content=row.content  # type:ignore
+                content=row.content,  # type:ignore
+                position_x=row.position_x,  # type:ignore
+                position_y=row.position_y  # type:ignore
             )
             for row in rows
         ]

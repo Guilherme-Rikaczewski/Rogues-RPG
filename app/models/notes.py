@@ -13,6 +13,10 @@ class Note(Base):
 
     content = Column(Text)
 
+    position_x = Column(String(256))
+
+    position_y = Column(String(256))
+
     user_id = Column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
