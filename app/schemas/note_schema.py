@@ -16,6 +16,7 @@ class NoteUpdate(BaseModel):
 
 
 class NoteResponse(BaseModel):
+    id: int
     color: ColorHexCode
     tittle: str
     content: str | None = None

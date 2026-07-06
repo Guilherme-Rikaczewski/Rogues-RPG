@@ -111,6 +111,7 @@ async def get_all_notes_from_room(
 
         return [
             NoteResponse(
+                id=row.id,
                 color=row.color,
                 tittle=row.tittle,
                 content=row.content
