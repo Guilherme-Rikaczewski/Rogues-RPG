@@ -119,7 +119,7 @@ async def read_all(
         if not notes:
             raise HTTPException(
                 404,
-                detail='note not found'
+                detail='Notes not found'
             )
 
         return notes
@@ -127,10 +127,10 @@ async def read_all(
     except HTTPException:
         raise
 
-    except Exception:
+    except Exception as error:
         raise HTTPException(
             500,
-            detail='Internal server error'
+            detail=f'Internal server error: {error}'
         )
 
 

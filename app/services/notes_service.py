@@ -100,6 +100,7 @@ async def get_all_notes_from_room(
 ) -> list[NoteResponse]:
 
     try:
+
         result = await db.execute(
             select(Note).where(
                 Note.room_id == room_id,
@@ -107,20 +108,20 @@ async def get_all_notes_from_room(
             )
         )
 
-        rows = result.all()
+        rows = result.scalars().all()
 
         return [
             NoteResponse(
-                id=row.id,
-                color=row.color,
-                tittle=row.tittle,
-                content=row.content
+                id=row.id,  # type:ignore
+                color=row.color,  # type:ignore
+                tittle=row.tittle,  # type:ignore
+                content=row.content  # type:ignore
             )
             for row in rows
         ]
 
-    except Exception:
-        raise
+    except Exception as error:
+        raise error
 
 
 async def delete_note(
