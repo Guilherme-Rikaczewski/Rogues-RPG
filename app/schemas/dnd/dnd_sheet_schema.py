@@ -34,13 +34,27 @@ class DnDSheet(BaseModel):
     spell_attack_bonus: int | None = None
     spellcasting_attribute: dt.Atributte | None = None
 
-    death_saving_throws: dt.DeathSavingThrows
-    attributes: dt.CharAttributes
-    saving_throws: dt.SavingThrows
-    inventory: dt.Inventory
-    bio: dt.Bio
-    skills: dt.Skills
-    spell_slots: dt.SpellSlots
+    death_saving_throws: dt.DeathSavingThrows = Field(
+        default_factory=lambda: dt.DeathSavingThrows()
+    )
+    attributes: dt.CharAttributes = Field(
+        default_factory=lambda: dt.CharAttributes()
+    )
+    saving_throws: dt.SavingThrows = Field(
+        default_factory=lambda: dt.SavingThrows()
+    )
+    inventory: dt.Inventory = Field(
+        default_factory=lambda: dt.Inventory()
+    )
+    bio: dt.Bio = Field(
+        default_factory=lambda: dt.Bio()
+    )
+    skills: dt.Skills = Field(
+        default_factory=lambda: dt.Skills()
+    )
+    spell_slots: dt.SpellSlots = Field(
+        default_factory=lambda: dt.SpellSlots()
+    )
 
     customizable_features: list[dt.CustomizableFeature] = Field(
         default_factory=list

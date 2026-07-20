@@ -15,7 +15,6 @@ class SheetCreate(BaseModel):
     game_system: GameSystem
     sheet_type: SheetType
     name: str
-    content: dict
 
 # lembra de validar com algo como 
 # if data.game_system == "dnd5e":

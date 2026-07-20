@@ -23,6 +23,10 @@ from app.utils.user_file_manager import delete_image
 from fastapi import UploadFile
 
 
+SCHEMA_VERSION_MASK = {
+    GameSystem.DND5e: 1
+}
+
 CREATE_SHEET_VALIDATOR_MASK = {
     GameSystem.DND5e: DnDSheet
 }
@@ -51,15 +55,24 @@ async def create_sheet(
     sheet_data: SheetCreate
 ) -> Sheet | None:
 
-    system_sheet_schema = CREATE_SHEET_VALIDATOR_MASK.get(sheet_data.game_system)
+    system_sheet_schema = CREATE_SHEET_VALIDATOR_MASK.get(
+        sheet_data.game_system
+    )
 
     if not system_sheet_schema:
         raise ValueError(
             f"Unsupported game system: {sheet_data.game_system}"
         )
 
-    validated_content = system_sheet_schema.model_validate(
-        sheet_data.content
+    schema_version = SCHEMA_VERSION_MASK.get(sheet_data.game_system)
+
+    if not schema_version:
+        raise ValueError(
+            'Unsupported schema version for game system'
+        )
+
+    validated_content = system_sheet_schema(
+        schema_version=schema_version
     )
 
     sheet = Sheet(
