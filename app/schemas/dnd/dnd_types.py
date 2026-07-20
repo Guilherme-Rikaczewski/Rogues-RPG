@@ -301,4 +301,6 @@ class Skills(BaseModel):
     stealth: SkillSpecs = Field(
         default_factory=lambda: SkillSpecs(atribute=Atributte.dex)
     )
-    survival: SkillSpecs = SkillSpecs(atribute=Atributte.wis)
+    survival: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.wis)
+    )
