@@ -40,27 +40,51 @@ class AttributeSpecs(BaseModel):
 
 
 class CharAttributes(BaseModel):
-    str: AttributeSpecs
-    dex: AttributeSpecs
-    con: AttributeSpecs
-    int: AttributeSpecs
-    wis: AttributeSpecs
-    cha: AttributeSpecs
+    str: AttributeSpecs = Field(
+        default_factory=lambda: AttributeSpecs()
+    )
+    dex: AttributeSpecs = Field(
+        default_factory=lambda: AttributeSpecs()
+    )
+    con: AttributeSpecs = Field(
+        default_factory=lambda: AttributeSpecs()
+    )
+    int: AttributeSpecs = Field(
+        default_factory=lambda: AttributeSpecs()
+    )
+    wis: AttributeSpecs = Field(
+        default_factory=lambda: AttributeSpecs()
+    )
+    cha: AttributeSpecs = Field(
+        default_factory=lambda: AttributeSpecs()
+    )
 
 
 class SavingThrowSpecs(BaseModel):
-    default_value: int
-    total_value: int
+    default_value: int = 0
+    total_value: int = 0
     is_proficient: bool = False
 
 
 class SavingThrows(BaseModel):
-    str: SavingThrowSpecs
-    dex: SavingThrowSpecs
-    con: SavingThrowSpecs
-    int: SavingThrowSpecs
-    wis: SavingThrowSpecs
-    cha: SavingThrowSpecs
+    str: SavingThrowSpecs = Field(
+        default_factory=lambda: SavingThrowSpecs()
+    )
+    dex: SavingThrowSpecs = Field(
+        default_factory=lambda: SavingThrowSpecs()
+    )
+    con: SavingThrowSpecs = Field(
+        default_factory=lambda: SavingThrowSpecs()
+    )
+    int: SavingThrowSpecs = Field(
+        default_factory=lambda: SavingThrowSpecs()
+    )
+    wis: SavingThrowSpecs = Field(
+        default_factory=lambda: SavingThrowSpecs()
+    )
+    cha: SavingThrowSpecs = Field(
+        default_factory=lambda: SavingThrowSpecs()
+    )
 
 
 class AttackRoll(BaseModel):
@@ -87,14 +111,18 @@ class SaveThrow(BaseModel):
 
 class Attack(BaseModel):
     name: str | None = None
-    roll: AttackRoll
+    roll: AttackRoll = Field(
+        default_factory=lambda: AttackRoll()
+    )
     range: str | None = None
     magic_bonus: int = 0
     critical_margin: int = 20
     damage: list[Damage] = Field(
         default_factory=lambda: [Damage()]
     )
-    save_throw: SaveThrow
+    save_throw: SaveThrow = Field(
+        default_factory=lambda: SaveThrow()
+    )
     description: str | None = None
 
 
@@ -114,7 +142,9 @@ class Item(BaseModel):
 
 
 class Inventory(BaseModel):
-    money: Money
+    money: Money = Field(
+        default_factory=lambda: Money()
+    )
     items: list[Item] = Field(
         default_factory=list
     )
@@ -149,7 +179,9 @@ class SpellAttack(BaseModel):
         default_factory=lambda: [Damage()]
     )
     healing: str | None = None
-    save_throw: SaveThrow
+    save_throw: SaveThrow = Field(
+        default_factory=lambda: SaveThrow()
+    )
     add_attribute_mod_on_damage_or_heal: bool = False
     description: str | None = None
     from_class: str | None = None
@@ -168,7 +200,9 @@ class Spell(BaseModel):
     duration: str | None = None
     cast_attribute: Atributte | None = None
     innate: bool = False
-    attack: SpellAttack
+    attack: SpellAttack = Field(
+        default_factory=lambda: SpellAttack()
+    )
 
 
 class SlotSpec(BaseModel):
@@ -177,15 +211,33 @@ class SlotSpec(BaseModel):
 
 
 class SpellSlots(BaseModel):
-    level_1: SlotSpec
-    level_2: SlotSpec
-    level_3: SlotSpec
-    level_4: SlotSpec
-    level_5: SlotSpec
-    level_6: SlotSpec
-    level_7: SlotSpec
-    level_8: SlotSpec
-    level_9: SlotSpec
+    level_1: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_2: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_3: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_4: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_5: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_6: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_7: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_8: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
+    level_9: SlotSpec = Field(
+        default_factory=lambda: SlotSpec()
+    )
 
 
 class SkillSpecs(BaseModel):
@@ -198,21 +250,55 @@ class SkillSpecs(BaseModel):
 
 
 class Skills(BaseModel):
-    acrobatics: SkillSpecs = SkillSpecs(atribute=Atributte.dex)
-    animal_handing: SkillSpecs = SkillSpecs(atribute=Atributte.wis)
-    arcana: SkillSpecs = SkillSpecs(atribute=Atributte.int)
-    athletics: SkillSpecs = SkillSpecs(atribute=Atributte.str)
-    deception: SkillSpecs = SkillSpecs(atribute=Atributte.cha)
-    history: SkillSpecs = SkillSpecs(atribute=Atributte.int)
-    insight: SkillSpecs = SkillSpecs(atribute=Atributte.wis)
-    intimidation: SkillSpecs = SkillSpecs(atribute=Atributte.cha)
-    investigation: SkillSpecs = SkillSpecs(atribute=Atributte.int)
-    medicine: SkillSpecs = SkillSpecs(atribute=Atributte.wis)
-    nature: SkillSpecs = SkillSpecs(atribute=Atributte.int)
-    perception: SkillSpecs = SkillSpecs(atribute=Atributte.wis)
-    performance: SkillSpecs = SkillSpecs(atribute=Atributte.cha)
-    persuasion: SkillSpecs = SkillSpecs(atribute=Atributte.cha)
-    religion: SkillSpecs = SkillSpecs(atribute=Atributte.int)
-    sleight_of_hand: SkillSpecs = SkillSpecs(atribute=Atributte.dex)
-    stealth: SkillSpecs = SkillSpecs(atribute=Atributte.dex)
+    acrobatics: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.dex)
+    )
+    animal_handing: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.wis)
+    )
+    arcana: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.int)
+    )
+    athletics: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.str)
+    )
+    deception: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.cha)
+    )
+    history: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.int)
+    )
+    insight: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.wis)
+    )
+    intimidation: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.cha)
+    )
+    investigation: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.int)
+    )
+    medicine: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.wis)
+    )
+    nature: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.int)
+    )
+    perception: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.wis)
+    )
+    performance: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.cha)
+    )
+    persuasion: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.cha)
+    )
+    religion: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.int)
+    )
+    sleight_of_hand: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.dex)
+    )
+    stealth: SkillSpecs = Field(
+        default_factory=lambda: SkillSpecs(atribute=Atributte.dex)
+    )
     survival: SkillSpecs = SkillSpecs(atribute=Atributte.wis)
