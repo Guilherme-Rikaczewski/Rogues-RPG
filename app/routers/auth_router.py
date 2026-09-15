@@ -93,8 +93,8 @@ async def login(
             "message": "Login successful"
         }
 
-    except HTTPException:
-        raise
+    except HTTPException as error:
+        raise error
 
     except Exception as error:
         raise HTTPException(

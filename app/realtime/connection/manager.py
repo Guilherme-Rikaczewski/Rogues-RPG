@@ -3,6 +3,7 @@ from app.schemas.types import RoomCode
 from app.schemas.tabletop_schema import WebSocketMessage
 import traceback
 
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[RoomCode, dict[int, WebSocket]] = {} # type: ignore
@@ -16,10 +17,6 @@ class ConnectionManager:
         room = self.active_connections.setdefault(
             room_code, {}
         )
-        # if room_code not in self.active_connections:
-        #     self.active_connections[room_code] = {}
-
-        # room = self.active_connections[room_code]
 
         old_connection = room.get(user_id)
 
@@ -30,9 +27,6 @@ class ConnectionManager:
             )
 
         await websocket.accept()
-
-        # if room_code not in self.active_connections:
-        #     self.active_connections[room_code] = {}
 
         room[user_id] = websocket
 

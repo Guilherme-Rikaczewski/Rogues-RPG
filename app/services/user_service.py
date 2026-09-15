@@ -139,8 +139,8 @@ async def get_user(
 
         return user
 
-    except Exception:
-        raise
+    except Exception as error:
+        raise error
 
 
 async def delete_user(

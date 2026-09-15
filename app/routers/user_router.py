@@ -129,7 +129,7 @@ async def delete(
     '/upload/profilepic',
     response_model=UserResponse
 )
-async def update_room_thumb_image(
+async def update_profile_image(
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
