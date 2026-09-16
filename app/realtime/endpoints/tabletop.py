@@ -4,15 +4,11 @@ from fastapi import (
     WebSocketDisconnect,
     Depends
 )
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.room_schema import RoomCode
 from app.realtime.connection.manager import manager
 from app.services.auth_service import (
     get_current_user_ws_id
-)
-from app.services.tabletop_service import (
-    update_asset, roll_dices
 )
 from app.services.user_service import (
     update_user, get_user
@@ -20,28 +16,33 @@ from app.services.user_service import (
 from app.schemas.user_schema import (
     UserUpdate
 )
-from app.schemas.tabletop_schema import (
-    AssetUpdate,
-    AssetMoveMessage,
-    AssetChangeLayerMessage,
-    DiceRollMessage,
-    ChatMessage,
-    WebSocketMessage
+from app.realtime.handlers.asset import (
+    handle_asset_change_layer,
+    handle_asset_move
 )
+from app.realtime.handlers.chat import (
+    handle_chat_message
+)
+from app.realtime.handlers.dice import (
+    handle_dice_roll
+)
+from app.realtime.handlers.validator import validate
 from app.db.session import get_db
 import traceback
 from datetime import datetime, timezone, timedelta
+from typing import Callable
+
 
 router = APIRouter(
     prefix="/ws",
     tags=["websocket"]
 )
 
-MESSAGE_TYPES = {
-    "asset.move": AssetMoveMessage,
-    "asset.change_layer": AssetChangeLayerMessage,
-    "dice.roll": DiceRollMessage,
-    "chat.message": ChatMessage,
+MESSAGE_HANDLERS = {
+    "asset.move": handle_asset_move,
+    "asset.change_layer": handle_asset_change_layer,
+    "chat.message": handle_chat_message,
+    "dice.roll": handle_dice_roll,
 }
 
 
@@ -78,9 +79,11 @@ async def tabletop_socket(
         while True:
             data = await websocket.receive_json()
             data_type = data.get("type")
-            schema: WebSocketMessage = MESSAGE_TYPES.get(data_type) # type: ignore
+            handler: Callable | None = MESSAGE_HANDLERS.get(
+                data_type  # type: ignore
+            )
 
-            if not schema:
+            if not handler:
                 await manager.send_to_user(
                     room_code,
                     user_id,
@@ -95,100 +98,16 @@ async def tabletop_socket(
                 )
                 continue
 
-            try:
-                data = schema.model_validate(data)
-            except ValidationError as error:
-                await manager.send_to_user(
-                    room_code,
-                    user_id,
-                    {
-                        'event': 'error',
-                        'payload': {
-                            'message': "Invalid payload",
-                            'errors': error.errors()
-                        }
-                    }
-                )
+            should_send_broadcast = await handler(
+                db,
+                data,
+                room_code,
+                user_id,
+                validate
+            )
+
+            if not should_send_broadcast:
                 continue
-
-            if isinstance(data, AssetMoveMessage):
-                updated_asset = await update_asset(
-                    db,
-                    data.asset_id,
-                    AssetUpdate(
-                        position_x=data.x,
-                        position_y=data.y
-                    )
-                )
-
-                if not updated_asset:
-                    await manager.send_to_user(
-                        room_code,
-                        user_id,
-                        {
-                            'event': 'error',
-                            'payload': {
-                                'message': (
-                                    "Can't move the asset"
-                                )
-                            }
-                        }
-                    )
-                    continue
-            elif isinstance(data, AssetChangeLayerMessage):
-                updated_asset = await update_asset(
-                    db,
-                    data.asset_id,
-                    AssetUpdate(
-                        layer=data.layer
-                    )
-                )
-
-                if not updated_asset:
-                    await manager.send_to_user(
-                        room_code,
-                        user_id,
-                        {
-                            'event': 'error',
-                            'payload': {
-                                'message': (
-                                    "Can't change the asset layer"
-                                )
-                            }
-                        }
-                    )
-                    continue
-            elif isinstance(data, DiceRollMessage):
-                dices_result = roll_dices(data.quantity, data.sides)
-
-                total = sum(dices_result) + data.bonus
-
-                data.result["dices"] = dices_result
-                data.result["total"] = total
-
-                if data.only_for_user_id is not None:
-                    await manager.send_to_user(
-                        room_code,
-                        data.only_for_user_id,
-                        message={
-                            'event': 'message',
-                            'user_id': user_id,
-                            'payload': data.model_dump()
-                        }
-                    )
-                    continue
-            elif isinstance(data, ChatMessage):
-                if data.only_for_user_id is not None:
-                    await manager.send_to_user(
-                        room_code,
-                        data.only_for_user_id,
-                        message={
-                            'event': 'message',
-                            'user_id': user_id,
-                            'payload': data.model_dump()
-                        }
-                    )
-                    continue
 
             await manager.broadcast(
                 room_code,
