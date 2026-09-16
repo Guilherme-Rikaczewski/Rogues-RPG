@@ -98,12 +98,26 @@ async def tabletop_socket(
                 )
                 continue
 
+            validated_data = validate(data)
+
+            if not validated_data:
+                await manager.send_to_user(
+                    room_code,
+                    user_id,
+                    {
+                        'event': 'error',
+                        'payload': {
+                            'message': "Invalid payload"
+                        }
+                    }
+                )
+                continue
+
             should_send_broadcast = await handler(
                 db,
-                data,
+                validated_data,
                 room_code,
                 user_id,
-                validate
             )
 
             if not should_send_broadcast:

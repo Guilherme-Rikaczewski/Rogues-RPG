@@ -12,21 +12,6 @@ async def handle_dice_roll(
     validator
 ) -> bool:
 
-    validated_data = validator(data)
-
-    if not validated_data:
-        await manager.send_to_user(
-            room_code,
-            user_id,
-            {
-                'event': 'error',
-                'payload': {
-                    'message': "Invalid payload"
-                }
-            }
-        )
-        return False
-
     dices_result = roll_dices(data.quantity, data.sides)
 
     total = sum(dices_result) + data.bonus
