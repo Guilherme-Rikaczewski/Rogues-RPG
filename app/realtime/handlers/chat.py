@@ -6,7 +6,6 @@ async def handle_chat_message(
     data,
     room_code,
     user_id,
-    validator
 ) -> bool:
 
     if data.only_for_user_id is not None:

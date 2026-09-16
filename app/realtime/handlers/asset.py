@@ -12,30 +12,14 @@ async def handle_asset_move(
     data,
     room_code,
     user_id,
-    validator
 ) -> bool:
-
-    validated_data = validator(data)
-
-    if not validated_data:
-        await manager.send_to_user(
-            room_code,
-            user_id,
-            {
-                'event': 'error',
-                'payload': {
-                    'message': "Invalid payload"
-                }
-            }
-        )
-        return False
 
     updated_asset = await update_asset(
         db,
-        validated_data.asset_id,
+        data.asset_id,
         AssetUpdate(
-            position_x=validated_data.x,
-            position_y=validated_data.y
+            position_x=data.x,
+            position_y=data.y
         )
     )
 
@@ -62,7 +46,6 @@ async def handle_asset_change_layer(
     data,
     room_code,
     user_id,
-    validator
 ) -> bool:
 
     updated_asset = await update_asset(

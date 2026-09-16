@@ -9,7 +9,6 @@ async def handle_dice_roll(
     data,
     room_code,
     user_id,
-    validator
 ) -> bool:
 
     dices_result = roll_dices(data.quantity, data.sides)
