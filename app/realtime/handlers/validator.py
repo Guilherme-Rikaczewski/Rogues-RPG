@@ -1,6 +1,7 @@
 from app.schemas.tabletop_schema import (
     AssetMoveMessage,
     AssetChangeLayerMessage,
+    AssetInsertMessage,
     DiceRollMessage,
     ChatMessage,
     WebSocketMessage
@@ -11,6 +12,7 @@ from pydantic import ValidationError
 MESSAGE_TYPES = {
     "asset.move": AssetMoveMessage,
     "asset.change_layer": AssetChangeLayerMessage,
+    "asset.insert": AssetInsertMessage,
     "dice.roll": DiceRollMessage,
     "chat.message": ChatMessage,
 }

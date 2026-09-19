@@ -18,7 +18,8 @@ from app.schemas.user_schema import (
 )
 from app.realtime.handlers.asset import (
     handle_asset_change_layer,
-    handle_asset_move
+    handle_asset_move,
+    handle_asset_insert
 )
 from app.realtime.handlers.chat import (
     handle_chat_message
@@ -41,6 +42,7 @@ router = APIRouter(
 MESSAGE_HANDLERS = {
     "asset.move": handle_asset_move,
     "asset.change_layer": handle_asset_change_layer,
+    "asset.insert": handle_asset_insert,
     "chat.message": handle_chat_message,
     "dice.roll": handle_dice_roll,
 }

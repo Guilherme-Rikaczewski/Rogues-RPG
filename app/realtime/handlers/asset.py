@@ -72,3 +72,34 @@ async def handle_asset_change_layer(
         return False
 
     return True
+
+
+async def handle_asset_insert(
+    db,
+    data,
+    room_code,
+    user_id,
+) -> bool:
+
+    updated_asset = await update_asset(
+        db,
+        data.asset_id,
+        asset_data=data.asset_data
+    )
+
+    if not updated_asset:
+        await manager.send_to_user(
+            room_code,
+            user_id,
+            {
+                'event': 'error',
+                'payload': {
+                    'message': (
+                        "Can't change the asset layer"
+                    )
+                }
+            }
+        )
+        return False
+
+    return True

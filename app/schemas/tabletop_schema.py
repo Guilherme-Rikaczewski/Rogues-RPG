@@ -9,6 +9,34 @@ class TabletopLayer(str, enum.Enum):
     map = "map"
 
 
+class AssetCreate(BaseModel):
+    asset_image_url: str = ''
+    asset_image_public_id: str = ''
+    asset_image_file_name: str = ''
+    layer: TabletopLayer | None = None
+    room_id: int | None = None
+    sheet_id: int | None = None
+    user_id: int
+
+
+class AssetUpdate(BaseModel):
+    position_x: str | None = None
+    position_y: str | None = None
+    layer: TabletopLayer | None = None
+
+
+class TabletopAssetResponse(BaseModel):
+    id: int
+    asset_image_url: str = ''
+    asset_image_public_id: str = ''
+    asset_image_file_name: str = ''
+    position_x: str | None
+    position_y: str | None
+    layer: TabletopLayer | None
+
+    model_config = {'from_attributes': True}
+
+
 class AssetMoveMessage(BaseModel):
     type: Literal["asset.move"]
 
@@ -22,6 +50,13 @@ class AssetChangeLayerMessage(BaseModel):
 
     asset_id: int
     layer: TabletopLayer
+
+
+class AssetInsertMessage(BaseModel):
+    type: Literal["asset.insert"]
+
+    asset_id: int
+    asset_data: AssetUpdate
 
 
 class DiceRollMessage(BaseModel):
@@ -52,30 +87,3 @@ WebSocketMessage = Union[
     ChatMessage,
 ]
 
-
-class AssetCreate(BaseModel):
-    asset_image_url: str = ''
-    asset_image_public_id: str = ''
-    asset_image_file_name: str = ''
-    layer: TabletopLayer | None = None
-    room_id: int | None = None
-    sheet_id: int | None = None
-    user_id: int
-
-
-class AssetUpdate(BaseModel):
-    position_x: str | None = None
-    position_y: str | None = None
-    layer: TabletopLayer | None = None
-
-
-class TabletopAssetResponse(BaseModel):
-    id: int
-    asset_image_url: str = ''
-    asset_image_public_id: str = ''
-    asset_image_file_name: str = ''
-    position_x: str | None
-    position_y: str | None
-    layer: TabletopLayer | None
-
-    model_config = {'from_attributes': True}
