@@ -86,4 +86,3 @@ WebSocketMessage = Union[
     DiceRollMessage,
     ChatMessage,
 ]
-
