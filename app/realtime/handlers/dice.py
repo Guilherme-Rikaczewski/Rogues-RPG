@@ -15,6 +15,7 @@ async def handle_dice_roll(
 
     total = sum(dices_result) + data.bonus
 
+    data.result = {}
     data.result["dices"] = dices_result
     data.result["total"] = total
 
@@ -25,7 +26,7 @@ async def handle_dice_roll(
             message={
                 'event': 'message',
                 'user_id': user_id,
-                'payload': data.model_dump()
+                'payload': data
             }
         )
         return False

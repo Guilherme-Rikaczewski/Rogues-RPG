@@ -130,7 +130,7 @@ async def tabletop_socket(
                 {
                     'event': 'message',
                     'user_id': user_id,
-                    'payload': data.model_dump()
+                    'payload': validated_data.model_dump()
                 }
             )
 

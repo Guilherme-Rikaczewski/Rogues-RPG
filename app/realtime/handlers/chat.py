@@ -15,7 +15,7 @@ async def handle_chat_message(
             message={
                 'event': 'message',
                 'user_id': user_id,
-                'payload': data.model_dump()
+                'payload': data
             }
         )
         return False

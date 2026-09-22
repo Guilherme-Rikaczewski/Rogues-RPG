@@ -44,12 +44,16 @@ class AssetMoveMessage(BaseModel):
     x: str
     y: str
 
+    model_config = {'from_attributes': True}
+
 
 class AssetChangeLayerMessage(BaseModel):
     type: Literal["asset.change_layer"]
 
     asset_id: int
     layer: TabletopLayer
+
+    model_config = {'from_attributes': True}
 
 
 class AssetInsertMessage(BaseModel):
@@ -58,6 +62,8 @@ class AssetInsertMessage(BaseModel):
     asset_id: int
     asset_data: AssetUpdate
 
+    model_config = {'from_attributes': True}
+
 
 class DiceRollMessage(BaseModel):
     type: Literal["dice.roll"]
@@ -65,11 +71,13 @@ class DiceRollMessage(BaseModel):
     quantity: int = 1
     sides: int
     bonus: int = 0
-    result: dict = {
+    result: dict | None = {
         'dices': [],
         'total': 0
     }
     only_for_user_id: int | None = None
+
+    model_config = {'from_attributes': True}
 
 
 class ChatMessage(BaseModel):
@@ -78,6 +86,8 @@ class ChatMessage(BaseModel):
     as_character: str | None = None
     message: str
     only_for_user_id: int | None = None
+
+    model_config = {'from_attributes': True}
 
 
 WebSocketMessage = Union[
