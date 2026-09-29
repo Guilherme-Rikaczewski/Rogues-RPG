@@ -6,7 +6,7 @@ import traceback
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[RoomCode, dict[int, WebSocket]] = {} # type: ignore
+        self.active_connections: dict[RoomCode, dict[int, WebSocket]] = {}  # type: ignore
 
     async def connect(
         self,

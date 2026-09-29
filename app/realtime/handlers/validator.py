@@ -22,7 +22,7 @@ def validate(
     data
 ) -> WebSocketMessage | None:
     data_type = data.get("type")
-    schema: WebSocketMessage = MESSAGE_TYPES.get(data_type) # type: ignore
+    schema: WebSocketMessage = MESSAGE_TYPES.get(data_type)  # type: ignore
 
     try:
         validated_data = schema.model_validate(data)
