@@ -194,6 +194,24 @@ async def get_asset(
         raise
 
 
+async def get_all_assets_from_user_in_room(
+    db: AsyncSession,
+    user_id: int,
+    room_id: int
+) -> list[TabletopAssets]:
+
+    result = await db.execute(
+        select(TabletopAssets).where(
+            TabletopAssets.user_id == user_id,
+            TabletopAssets.room_id == room_id
+        )
+    )
+
+    assets = result.scalars().all()
+
+    return assets
+
+
 async def delete_asset(
     db: AsyncSession,
     asset_id: int

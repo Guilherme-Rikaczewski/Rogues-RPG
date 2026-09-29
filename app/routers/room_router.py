@@ -7,15 +7,18 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
+from app.schemas.tabletop_schema import TabletopAssetResponse
 from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
     RoomResponse,
     RoomRole
 )
+from app.schemas.tabletop_schema import AssetCreate
 from app.schemas.types import RoomCode
 import app.services.room_user_service as rus
 import app.services.room_service as rs
+import app.services.tabletop_service as ts
 from app.services.auth_service import (
     get_current_user_id
 )
@@ -407,4 +410,130 @@ async def update_room_thumb_image(
         raise HTTPException(
             500,
             detail=f'Internal server error {error}'
+        )
+
+
+@router.patch(
+    '/upload/asset/{room_id}',
+)
+async def create_asset_with_image(
+    room_id: int,
+    file: UploadFile = File(...),
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+
+    try:
+
+        MAX_SIZE = 10 * 1024 * 1024
+
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+
+        if size > MAX_SIZE:
+            raise HTTPException(
+                400,
+                "File exceeds maximum size: 10MB"
+            )
+
+        if file.content_type not in [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+        ]:
+            raise HTTPException(
+                400,
+                detail="Invalid file type"
+            )
+
+        new_asset = await ts.create_asset(
+            db,
+            asset_data=AssetCreate(
+                room_id=room_id,
+                user_id=user_id
+            )
+        )
+
+        updated_asset = await ts.upload_asset_image(
+            db,
+            user_id,
+            asset_id=new_asset.id,
+            file=file
+        )
+
+        if not updated_asset:
+            raise HTTPException(
+                404,
+                detail="Room not found"
+            )
+
+        return updated_asset
+
+    except ValueError as error:
+
+        raise HTTPException(
+            400,
+            detail=str(error)
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        raise HTTPException(
+            500,
+            detail=f'Internal server error {error}'
+        )
+
+
+@router.get('/assets/{room_id}', response_model=list[TabletopAssetResponse])
+async def read_all_assets(
+    room_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+
+    try:
+
+        room = await rs.get_room(
+            db,
+            room_id
+        )
+
+        if not room:
+            raise HTTPException(
+                404,
+                detail='Room not found'
+            )
+
+        room_user = await rus.read_role_room_user(
+            db,
+            room_id,
+            user_id
+        )
+
+        if not room_user:
+            raise HTTPException(
+                403,
+                detail='Permission denied'
+            )
+
+        assets = await ts.get_all_assets_from_user_in_room(
+            db,
+            user_id,
+            room_id
+        )
+
+        return assets
+
+    except HTTPException:
+        raise
+
+    except Exception:
+
+        raise HTTPException(
+            500,
+            detail='Internal server error'
         )

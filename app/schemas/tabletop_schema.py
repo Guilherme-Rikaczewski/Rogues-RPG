@@ -9,50 +9,6 @@ class TabletopLayer(str, enum.Enum):
     map = "map"
 
 
-class AssetMoveMessage(BaseModel):
-    type: Literal["asset.move"]
-
-    asset_id: int
-    x: str
-    y: str
-
-
-class AssetChangeLayerMessage(BaseModel):
-    type: Literal["asset.change_layer"]
-
-    asset_id: int
-    layer: TabletopLayer
-
-
-class DiceRollMessage(BaseModel):
-    type: Literal["dice.roll"]
-
-    quantity: int = 1
-    sides: int
-    bonus: int = 0
-    result: dict = {
-        'dices': [],
-        'total': 0
-    }
-    only_for_user_id: int | None = None
-
-
-class ChatMessage(BaseModel):
-    type: Literal["chat.message"]
-
-    as_character: str | None = None
-    message: str
-    only_for_user_id: int | None = None
-
-
-WebSocketMessage = Union[
-    AssetMoveMessage,
-    AssetChangeLayerMessage,
-    DiceRollMessage,
-    ChatMessage,
-]
-
-
 class AssetCreate(BaseModel):
     asset_image_url: str = ''
     asset_image_public_id: str = ''
@@ -79,3 +35,64 @@ class TabletopAssetResponse(BaseModel):
     layer: TabletopLayer | None
 
     model_config = {'from_attributes': True}
+
+
+class AssetMoveMessage(BaseModel):
+    type: Literal["asset.move"]
+
+    asset_id: int
+    x: str
+    y: str
+
+    model_config = {'from_attributes': True}
+
+
+class AssetChangeLayerMessage(BaseModel):
+    type: Literal["asset.change_layer"]
+
+    asset_id: int
+    layer: TabletopLayer
+
+    model_config = {'from_attributes': True}
+
+
+class AssetInsertMessage(BaseModel):
+    type: Literal["asset.insert"]
+
+    asset_id: int
+    asset_data: AssetUpdate
+
+    model_config = {'from_attributes': True}
+
+
+class DiceRollMessage(BaseModel):
+    type: Literal["dice.roll"]
+
+    quantity: int = 1
+    sides: int
+    bonus: int = 0
+    result: dict | None = {
+        'dices': [],
+        'total': 0
+    }
+    only_for_user_id: int | None = None
+
+    model_config = {'from_attributes': True}
+
+
+class ChatMessage(BaseModel):
+    type: Literal["chat.message"]
+
+    as_character: str | None = None
+    message: str
+    only_for_user_id: int | None = None
+
+    model_config = {'from_attributes': True}
+
+
+WebSocketMessage = Union[
+    AssetMoveMessage,
+    AssetChangeLayerMessage,
+    DiceRollMessage,
+    ChatMessage,
+]
