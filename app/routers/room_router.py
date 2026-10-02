@@ -12,7 +12,9 @@ from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
     RoomResponse,
-    RoomRole
+    RoomRole,
+    TabletopRoomResponse,
+    UsersRoomResponse
 )
 from app.schemas.tabletop_schema import AssetCreate
 from app.schemas.types import RoomCode
@@ -489,7 +491,7 @@ async def create_asset_with_image(
 
 
 @router.get('/assets/{room_id}', response_model=list[TabletopAssetResponse])
-async def read_all_assets(
+async def read_all_assets_from_user(
     room_id: int,
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
@@ -537,3 +539,21 @@ async def read_all_assets(
             500,
             detail='Internal server error'
         )
+
+
+@router.get('/tabletop/{room_id}', response_model=TabletopRoomResponse)
+async def read_tabletop_content(
+    room_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    pass
+
+
+@router.get('/users/{room_id}', response_model=UsersRoomResponse)
+async def read_all_users_on_room(
+    room_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    pass
