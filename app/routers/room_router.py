@@ -556,4 +556,28 @@ async def read_all_users_on_room(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    pass
+    try:
+
+        users_in_room = await rs.get_all_users_on_room(
+            db,
+            room_id,
+            user_id
+        )
+
+        if not users_in_room:
+            raise HTTPException(
+                404,
+                detail='Room not found'
+            )
+
+        return users_in_room
+
+    except HTTPException as error:
+        raise error
+
+    except Exception:
+
+        raise HTTPException(
+            500,
+            detail='Internal server error'
+        )
