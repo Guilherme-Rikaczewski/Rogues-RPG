@@ -1,4 +1,4 @@
-name: CI/CD - Manga Searching Backend
+name: CI/CD - Dice Tales Backend
 
 on:
   push:
