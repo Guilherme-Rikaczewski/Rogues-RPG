@@ -4,12 +4,17 @@ from sqlalchemy import select
 from app.models.rooms import Room
 from app.models.users import User
 from app.models.room_users import RoomUser
+from app.models.notes import Note
+from app.models.tabletop_assets import TabletopAssets
 from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
     UsersRoomResponse,
-    UserInRoom
+    UserInRoom,
+    TabletopRoomResponse,
 )
+from app.schemas.tabletop_schema import TabletopAssetResponse
+from app.schemas.note_schema import NoteResponse
 from app.utils.code import generate_code
 from app.utils.user_file_manager import (
     upload_image,
@@ -391,6 +396,56 @@ async def get_all_users_on_room(
             users=users,
             created_at=first_row.created_at,
             updated_at=first_row.updated_at
+        )
+
+    except Exception:
+        raise
+
+
+async def get_content_from_room(
+    db: AsyncSession,
+    room_id: int,
+    user_id: int
+) -> TabletopRoomResponse | None:
+    try:
+        # Verifica se o usuário pertence à sala
+        result_user_room = await db.execute(
+            select(RoomUser).where(
+                RoomUser.room_id == room_id,
+                RoomUser.user_id == user_id
+            )
+        )
+
+        user_room = result_user_room.scalar_one_or_none()
+
+        if not user_room:
+            return None
+
+        # Busca todos os assets da sala
+        result_assets = await db.execute(
+            select(TabletopAssets)
+            .where(TabletopAssets.room_id == room_id)
+        )
+
+        assets = result_assets.scalars().all()
+
+        # Busca todas as notas da sala
+        result_notes = await db.execute(
+            select(Note)
+            .where(Note.room_id == room_id)
+        )
+
+        notes = result_notes.scalars().all()
+
+        return TabletopRoomResponse(
+            notes=[
+                NoteResponse.model_validate(note)
+                for note in notes
+            ],
+            assets=[
+                TabletopAssetResponse.model_validate(asset)
+                for asset in assets
+            ]
         )
 
     except Exception:

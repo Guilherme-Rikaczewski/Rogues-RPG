@@ -547,7 +547,30 @@ async def read_tabletop_content(
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    pass
+    try:
+
+        room_content = await rs.get_content_from_room(
+            db,
+            room_id,
+            user_id
+        )        
+
+        if not room_content:
+            raise HTTPException(
+                404,
+                detail='Content not found'
+            )
+
+        return room_content
+
+    except HTTPException as error:
+        raise error
+
+    except Exception:
+        raise HTTPException(
+            500,
+            detail='Internal server error'
+        )
 
 
 @router.get('/users/{room_id}', response_model=UsersRoomResponse)
