@@ -4,10 +4,17 @@ from sqlalchemy import select
 from app.models.rooms import Room
 from app.models.users import User
 from app.models.room_users import RoomUser
+from app.models.notes import Note
+from app.models.tabletop_assets import TabletopAssets
 from app.schemas.room_schema import (
     RoomCreate,
-    RoomUpdate
+    RoomUpdate,
+    UsersRoomResponse,
+    UserInRoom,
+    TabletopRoomResponse,
 )
+from app.schemas.tabletop_schema import TabletopAssetResponse
+from app.schemas.note_schema import NoteResponse
 from app.utils.code import generate_code
 from app.utils.user_file_manager import (
     upload_image,
@@ -316,4 +323,130 @@ async def upload_room_thumb_image(
     except Exception:
 
         await db.rollback()
+        raise
+
+
+async def get_all_users_on_room(
+    db: AsyncSession,
+    room_id: int,
+    user_id: int
+) -> UsersRoomResponse | None:
+    try:
+        current_room_user = aliased(RoomUser)
+        room_user = aliased(RoomUser)
+
+        result = await db.execute(
+            select(
+                Room.id.label("room_id"),
+                Room.room_name,
+                Room.thumb_image_url,
+                Room.code,
+                Room.created_at,
+                Room.updated_at,
+
+                current_room_user.role.label("current_user_role"),
+
+                User.id.label("user_id"),
+                User.username,
+                User.profilepic_image_url,
+                room_user.role.label("user_role")
+            )
+            .join(
+                current_room_user,
+                current_room_user.room_id == Room.id
+            )
+            .join(
+                room_user,
+                room_user.room_id == Room.id
+            )
+            .join(
+                User,
+                User.id == room_user.user_id
+            )
+            .where(
+                Room.id == room_id,
+                current_room_user.user_id == user_id
+            )
+            .order_by(User.username)
+        )
+
+        rows = result.all()
+
+        if not rows:
+            return None
+
+        first_row = rows[0]
+
+        users = [
+            UserInRoom(
+                id=row.user_id,
+                username=row.username,
+                profilepic_image_url=row.profilepic_image_url,
+                role=row.user_role
+            )
+            for row in rows
+        ]
+
+        return UsersRoomResponse(
+            room_id=first_row.room_id,
+            room_name=first_row.room_name,
+            thumb_image_url=first_row.thumb_image_url,
+            code=first_row.code,
+            role=first_row.current_user_role,
+            users=users,
+            created_at=first_row.created_at,
+            updated_at=first_row.updated_at
+        )
+
+    except Exception:
+        raise
+
+
+async def get_content_from_room(
+    db: AsyncSession,
+    room_id: int,
+    user_id: int
+) -> TabletopRoomResponse | None:
+    try:
+        # Verifica se o usuário pertence à sala
+        result_user_room = await db.execute(
+            select(RoomUser).where(
+                RoomUser.room_id == room_id,
+                RoomUser.user_id == user_id
+            )
+        )
+
+        user_room = result_user_room.scalar_one_or_none()
+
+        if not user_room:
+            return None
+
+        # Busca todos os assets da sala
+        result_assets = await db.execute(
+            select(TabletopAssets)
+            .where(TabletopAssets.room_id == room_id)
+        )
+
+        assets = result_assets.scalars().all()
+
+        # Busca todas as notas da sala
+        result_notes = await db.execute(
+            select(Note)
+            .where(Note.room_id == room_id)
+        )
+
+        notes = result_notes.scalars().all()
+
+        return TabletopRoomResponse(
+            notes=[
+                NoteResponse.model_validate(note)
+                for note in notes
+            ],
+            assets=[
+                TabletopAssetResponse.model_validate(asset)
+                for asset in assets
+            ]
+        )
+
+    except Exception:
         raise

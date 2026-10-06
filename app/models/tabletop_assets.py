@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum, Boolean
 from app.schemas.tabletop_schema import TabletopLayer
 from app.db.base import Base
 
@@ -21,6 +21,8 @@ class TabletopAssets(Base):
     position_x = Column(String(256))
 
     position_y = Column(String(256))
+
+    visible = Column(Boolean)
 
     room_id = Column(
         Integer,

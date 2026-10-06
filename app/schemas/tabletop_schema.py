@@ -23,6 +23,7 @@ class AssetUpdate(BaseModel):
     position_x: str | None = None
     position_y: str | None = None
     layer: TabletopLayer | None = None
+    visible: bool | None = None
 
 
 class TabletopAssetResponse(BaseModel):
@@ -33,6 +34,7 @@ class TabletopAssetResponse(BaseModel):
     position_x: str | None
     position_y: str | None
     layer: TabletopLayer | None
+    visible: bool | None
 
     model_config = {'from_attributes': True}
 
