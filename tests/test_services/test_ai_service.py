@@ -20,74 +20,54 @@ def make_attributes(**overrides):
     return data
 
 
-@pytest.mark.asyncio
-@patch("app.services.ai_service.print")
-@patch("app.services.ai_service.types.GenerateContentConfig")
-@patch("app.services.ai_service.types.ThinkingConfig")
-@patch("app.services.ai_service.genai.Client")
-async def test_get_char_made_by_ai_replaces_unspecified_attributes_and_returns_text(
-    mock_client_class,
-    mock_thinking_config,
-    mock_generate_config,
-    mock_print
-):
-    attributes = make_attributes(
-        name=None,
-        race=None,
-        god=None
-    )
+@pytest.fixture
+def gemini_client():
     client = MagicMock()
     client.models.generate_content.return_value = MagicMock(
         text="{'name': 'Aria'}"
     )
-    mock_client_class.return_value = client
-    mock_thinking_config.return_value = "thinking-config"
-    mock_generate_config.return_value = "generate-config"
 
-    result = await get_char_made_by_ai(attributes)
+    with patch(
+        "app.services.ai_service.genai.Client",
+        return_value=client
+    ):
+        yield client
+
+
+def get_prompt(gemini_client):
+    return gemini_client.models.generate_content.call_args.kwargs["contents"]
+
+
+async def test_get_char_made_by_ai_returns_model_text(gemini_client):
+    result = await get_char_made_by_ai(make_attributes())
 
     assert result == "{'name': 'Aria'}"
-    assert attributes["name"] == "Not specified"
-    assert attributes["race"] == "Not specified"
-    assert attributes["god"] == "Not specified"
+    gemini_client.models.generate_content.assert_called_once()
 
-    mock_print.assert_called_once_with(attributes)
-    mock_client_class.assert_called_once_with()
-    mock_thinking_config.assert_called_once_with(thinking_level="low")
-    mock_generate_config.assert_called_once_with(
-        thinking_config="thinking-config"
+
+async def test_get_char_made_by_ai_marks_missing_attributes_in_prompt(
+    gemini_client
+):
+    await get_char_made_by_ai(
+        make_attributes(name=None, race=None, god=None)
     )
 
-    client.models.generate_content.assert_called_once()
-    call_kwargs = client.models.generate_content.call_args.kwargs
-    assert call_kwargs["model"] == "gemini-3-flash-preview"
-    assert call_kwargs["config"] == "generate-config"
-    assert "Character Name: Not specified;" in call_kwargs["contents"]
-    assert "Race: Not specified;" in call_kwargs["contents"]
-    assert "Please answer only EXACTLY in this format" in (
-        call_kwargs["contents"]
+    prompt = get_prompt(gemini_client)
+    assert "Character Name: Not specified;" in prompt
+    assert "Race: Not specified;" in prompt
+    assert (
+        "Serves the fictional god from the chosen system: Not specified;"
+        in prompt
     )
+    assert "Class: Mage;" in prompt
 
 
-@pytest.mark.asyncio
-@patch("app.services.ai_service.print")
-@patch("app.services.ai_service.genai.Client")
 async def test_get_char_made_by_ai_keeps_provided_attributes_in_prompt(
-    mock_client_class,
-    mock_print
+    gemini_client
 ):
-    attributes = make_attributes()
-    client = MagicMock()
-    client.models.generate_content.return_value = MagicMock(
-        text="{'name': 'Aria'}"
-    )
-    mock_client_class.return_value = client
+    await get_char_made_by_ai(make_attributes())
 
-    result = await get_char_made_by_ai(attributes)
-
-    assert result == "{'name': 'Aria'}"
-
-    prompt = client.models.generate_content.call_args.kwargs["contents"]
+    prompt = get_prompt(gemini_client)
     assert "Game System: D&D;" in prompt
     assert "Character Name: Aria;" in prompt
     assert "Class: Mage;" in prompt
@@ -97,22 +77,32 @@ async def test_get_char_made_by_ai_keeps_provided_attributes_in_prompt(
     assert "Planned build: Fire mage;" in prompt
     assert "Not specified" not in prompt
 
-    mock_print.assert_called_once_with(attributes)
+
+async def test_get_char_made_by_ai_asks_for_dict_format(gemini_client):
+    await get_char_made_by_ai(make_attributes())
+
+    prompt = get_prompt(gemini_client)
+    assert "Please answer only EXACTLY in this format" in prompt
+    for key in ("'lore'", "'physical_characteristics'", "'personality_traits'"):
+        assert key in prompt
 
 
-@pytest.mark.asyncio
-@patch("app.services.ai_service.print")
-@patch("app.services.ai_service.genai.Client")
-async def test_get_char_made_by_ai_reraises_generate_content_error(
-    mock_client_class,
-    mock_print
+async def test_get_char_made_by_ai_uses_gemini_flash_with_low_thinking(
+    gemini_client
 ):
-    attributes = make_attributes()
-    client = MagicMock()
-    client.models.generate_content.side_effect = RuntimeError("ai failed")
-    mock_client_class.return_value = client
+    await get_char_made_by_ai(make_attributes())
+
+    kwargs = gemini_client.models.generate_content.call_args.kwargs
+    assert kwargs["model"] == "gemini-3-flash-preview"
+    assert kwargs["config"].thinking_config.thinking_level.lower() == "low"
+
+
+async def test_get_char_made_by_ai_reraises_generate_content_error(
+    gemini_client
+):
+    gemini_client.models.generate_content.side_effect = RuntimeError(
+        "ai failed"
+    )
 
     with pytest.raises(RuntimeError, match="ai failed"):
-        await get_char_made_by_ai(attributes)
-
-    mock_print.assert_called_once_with(attributes)
+        await get_char_made_by_ai(make_attributes())
