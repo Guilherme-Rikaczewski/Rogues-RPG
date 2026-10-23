@@ -95,7 +95,7 @@ async def handle_asset_insert(
                 'event': 'error',
                 'payload': {
                     'message': (
-                        "Can't change the asset layer"
+                        "Can't insert the asset"
                     )
                 }
             }

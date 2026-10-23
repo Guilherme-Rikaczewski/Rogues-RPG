@@ -95,6 +95,7 @@ class ChatMessage(BaseModel):
 WebSocketMessage = Union[
     AssetMoveMessage,
     AssetChangeLayerMessage,
+    AssetInsertMessage,
     DiceRollMessage,
     ChatMessage,
 ]
