@@ -22,6 +22,12 @@ class TabletopAssets(Base):
 
     position_y = Column(String(256))
 
+    height = Column(String(256))
+
+    width = Column(String(256))
+
+    layer_order = Column(Integer, nullable=False, default=0)
+
     visible = Column(Boolean)
 
     room_id = Column(

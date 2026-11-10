@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Union, Literal
 import enum
 
@@ -24,6 +24,9 @@ class AssetUpdate(BaseModel):
     position_y: str | None = None
     layer: TabletopLayer | None = None
     visible: bool | None = None
+    height: str | None = None
+    width: str | None = None
+    layer_order: int | None = None
 
 
 class TabletopAssetResponse(BaseModel):
@@ -35,6 +38,9 @@ class TabletopAssetResponse(BaseModel):
     position_y: str | None
     layer: TabletopLayer | None
     visible: bool | None
+    height: str | None = None
+    width: str | None = None
+    layer_order: int = 0
 
     model_config = {'from_attributes': True}
 
@@ -54,6 +60,24 @@ class AssetChangeLayerMessage(BaseModel):
 
     asset_id: int
     layer: TabletopLayer
+
+    model_config = {'from_attributes': True}
+
+
+class AssetChangeOrderMessage(BaseModel):
+    type: Literal["asset.change_order"]
+
+    asset_id: int
+    layer: TabletopLayer
+    layer_order: int
+
+    model_config = {'from_attributes': True}
+
+
+class AssetRemoveFromTabletopMessage(BaseModel):
+    type: Literal["asset.remove_from_tabletop"]
+
+    asset_id: int
 
     model_config = {'from_attributes': True}
 
@@ -92,10 +116,50 @@ class ChatMessage(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class AssetChangeVisibilityMessage(BaseModel):
+    type: Literal["asset.change_visibility"]
+
+    asset_id: int
+    visible: bool
+
+    model_config = {'from_attributes': True}
+
+
+class ChangeBackgroundSettingsMessage(BaseModel):
+    type: Literal["background.change_settings"]
+
+    visible_grid: bool | None = None
+    background_color: str | None = None
+    grid_color: str | None = None
+    grid_opacity: int | None = Field(default=None, ge=0, le=100)
+    page_size_x: int | None = None
+    page_size_y: int | None = None
+    map_scale_value: float | None = None
+    map_scale_unity: str | None = None
+    movement_adaptable_to_grid: bool | None = None
+
+    model_config = {'from_attributes': True}
+
+
+class AssetChangeSizeMessage(BaseModel):
+    type: Literal["asset.change_size"]
+
+    asset_id: int
+    height: str | None = None
+    width: str | None = None
+
+    model_config = {'from_attributes': True}
+
+
 WebSocketMessage = Union[
     AssetMoveMessage,
     AssetChangeLayerMessage,
+    AssetChangeOrderMessage,
+    AssetRemoveFromTabletopMessage,
     AssetInsertMessage,
+    AssetChangeVisibilityMessage,
+    ChangeBackgroundSettingsMessage,
+    AssetChangeSizeMessage,
     DiceRollMessage,
     ChatMessage,
 ]

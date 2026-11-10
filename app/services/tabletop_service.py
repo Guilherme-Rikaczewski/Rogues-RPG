@@ -242,3 +242,29 @@ async def delete_asset(
 
         await db.rollback()
         raise
+
+
+async def remove_asset_from_tabletop(
+    db: AsyncSession,
+    asset_id: int
+) -> bool:
+    try:
+        result = await db.execute(
+            select(TabletopAssets).where(TabletopAssets.id == asset_id)
+        )
+        asset = result.scalar_one_or_none()
+        if not asset:
+            return False
+
+        asset.layer = None
+        asset.position_x = None
+        asset.position_y = None
+        asset.width = None
+        asset.height = None
+        asset.visible = None
+        asset.layer_order = 0
+        await db.commit()
+        return True
+    except Exception:
+        await db.rollback()
+        raise

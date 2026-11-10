@@ -18,14 +18,21 @@ from app.schemas.user_schema import (
 )
 from app.realtime.handlers.asset import (
     handle_asset_change_layer,
+    handle_asset_change_order,
+    handle_asset_remove_from_tabletop,
     handle_asset_move,
-    handle_asset_insert
+    handle_asset_insert,
+    handle_asset_change_visibility,
+    handle_asset_change_size
 )
 from app.realtime.handlers.chat import (
     handle_chat_message
 )
 from app.realtime.handlers.dice import (
     handle_dice_roll
+)
+from app.realtime.handlers.background import (
+    handle_change_background_settings
 )
 from app.realtime.handlers.validator import validate
 from app.db.session import get_db
@@ -42,9 +49,14 @@ router = APIRouter(
 MESSAGE_HANDLERS = {
     "asset.move": handle_asset_move,
     "asset.change_layer": handle_asset_change_layer,
+    "asset.change_order": handle_asset_change_order,
+    "asset.remove_from_tabletop": handle_asset_remove_from_tabletop,
+    "asset.change_visibility": handle_asset_change_visibility,
+    "asset.change_size": handle_asset_change_size,
     "asset.insert": handle_asset_insert,
     "chat.message": handle_chat_message,
     "dice.roll": handle_dice_roll,
+    "background.change_settings": handle_change_background_settings,
 }
 
 
