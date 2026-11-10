@@ -1,9 +1,6 @@
 from app.realtime.connection.manager import manager
-from app.services.tabletop_service import (
-    update_asset
-)
-from app.schemas.tabletop_schema import (
-    AssetUpdate,
+from app.services.tabletop_settings_service import (
+    update_room_tabletop_settings
 )
 
 
@@ -14,6 +11,24 @@ async def handle_change_background_settings(
     user_id,
 ) -> bool:
 
-    # guardar informações no banco
+    settings = await update_room_tabletop_settings(
+        db,
+        room_code,
+        user_id,
+        data.model_dump(exclude_unset=True, exclude_none=True),
+    )
+
+    if not settings:
+        await manager.send_to_user(
+            room_code,
+            user_id,
+            {
+                'event': 'error',
+                'payload': {
+                    'message': "Can't update tabletop settings"
+                }
+            }
+        )
+        return False
 
     return True

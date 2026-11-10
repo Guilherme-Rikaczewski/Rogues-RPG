@@ -6,6 +6,7 @@ from app.models.users import User
 from app.models.room_users import RoomUser
 from app.models.notes import Note
 from app.models.tabletop_assets import TabletopAssets
+from app.services.tabletop_settings_service import get_or_create_tabletop_settings
 from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
@@ -421,6 +422,8 @@ async def get_content_from_room(
         if not user_room:
             return None
 
+        tabletop_settings = await get_or_create_tabletop_settings(db, room_id)
+
         # Busca todos os assets da sala
         result_assets = await db.execute(
             select(TabletopAssets)
@@ -445,7 +448,8 @@ async def get_content_from_room(
             assets=[
                 TabletopAssetResponse.model_validate(asset)
                 for asset in assets
-            ]
+            ],
+            settings=tabletop_settings,
         )
 
     except Exception:

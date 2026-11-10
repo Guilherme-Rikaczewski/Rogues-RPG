@@ -45,6 +45,20 @@ class TabletopAssetResponse(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class TabletopSettingsResponse(BaseModel):
+    visible_grid: bool = True
+    movement_adaptable_to_grid: bool = False
+    grid_color: str = "#000000"
+    grid_opacity: int = 50
+    background_color: str = "#949494"
+    page_size_x: int = 1920
+    page_size_y: int = 1080
+    map_scale_value: float = 0
+    map_scale_unity: str = "meters"
+
+    model_config = {'from_attributes': True}
+
+
 class AssetMoveMessage(BaseModel):
     type: Literal["asset.move"]
 
