@@ -2,7 +2,12 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from app.schemas.types import RoomName, RoomCode, Username
 from app.schemas.note_schema import NoteResponse
-from app.schemas.tabletop_schema import TabletopAssetResponse, TabletopSettingsResponse
+from app.schemas.tabletop_schema import (
+    TabletopAssetResponse,
+    TabletopFolderResponse,
+    TabletopPageResponse,
+    TabletopSettingsResponse,
+)
 import enum
 
 
@@ -67,5 +72,9 @@ class TabletopRoomResponse(BaseModel):
     settings: TabletopSettingsResponse = Field(
         default_factory=TabletopSettingsResponse
     )
+    pages: list[TabletopPageResponse] = Field(default_factory=list)
+    folders: list[TabletopFolderResponse] = Field(default_factory=list)
+    page_id: int | None = None
+    active_page_id: int | None = None
 
     model_config = {'from_attributes': True}

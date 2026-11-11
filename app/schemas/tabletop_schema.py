@@ -59,10 +59,32 @@ class TabletopSettingsResponse(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class TabletopPageResponse(BaseModel):
+    id: int
+    room_id: int
+    folder_id: int | None = None
+    name: str
+    display_order: int = 0
+    is_players_page: bool = False
+    preview_image_url: str | None = None
+
+    model_config = {'from_attributes': True}
+
+
+class TabletopFolderResponse(BaseModel):
+    id: int
+    room_id: int
+    name: str
+    display_order: int = 0
+
+    model_config = {'from_attributes': True}
+
+
 class AssetMoveMessage(BaseModel):
     type: Literal["asset.move"]
 
     asset_id: int
+    page_id: int | None = None
     x: str
     y: str
 
@@ -73,6 +95,7 @@ class AssetChangeLayerMessage(BaseModel):
     type: Literal["asset.change_layer"]
 
     asset_id: int
+    page_id: int | None = None
     layer: TabletopLayer
 
     model_config = {'from_attributes': True}
@@ -82,6 +105,7 @@ class AssetChangeOrderMessage(BaseModel):
     type: Literal["asset.change_order"]
 
     asset_id: int
+    page_id: int | None = None
     layer: TabletopLayer
     layer_order: int
 
@@ -92,6 +116,7 @@ class AssetRemoveFromTabletopMessage(BaseModel):
     type: Literal["asset.remove_from_tabletop"]
 
     asset_id: int
+    page_id: int | None = None
 
     model_config = {'from_attributes': True}
 
@@ -100,6 +125,7 @@ class AssetInsertMessage(BaseModel):
     type: Literal["asset.insert"]
 
     asset_id: int
+    page_id: int
     asset_data: AssetUpdate
 
     model_config = {'from_attributes': True}
@@ -134,6 +160,7 @@ class AssetChangeVisibilityMessage(BaseModel):
     type: Literal["asset.change_visibility"]
 
     asset_id: int
+    page_id: int | None = None
     visible: bool
 
     model_config = {'from_attributes': True}
@@ -151,6 +178,7 @@ class ChangeBackgroundSettingsMessage(BaseModel):
     map_scale_value: float | None = None
     map_scale_unity: str | None = None
     movement_adaptable_to_grid: bool | None = None
+    page_id: int | None = None
 
     model_config = {'from_attributes': True}
 
@@ -159,10 +187,42 @@ class AssetChangeSizeMessage(BaseModel):
     type: Literal["asset.change_size"]
 
     asset_id: int
+    page_id: int | None = None
     height: str | None = None
     width: str | None = None
 
     model_config = {'from_attributes': True}
+
+
+class PageCreateMessage(BaseModel):
+    type: Literal["page.create"]
+
+
+class FolderCreateMessage(BaseModel):
+    type: Literal["folder.create"]
+
+
+class PageRenameMessage(BaseModel):
+    type: Literal["page.rename"]
+    page_id: int
+    name: str
+
+
+class FolderRenameMessage(BaseModel):
+    type: Literal["folder.rename"]
+    folder_id: int
+    name: str
+
+
+class PageMoveMessage(BaseModel):
+    type: Literal["page.move"]
+    page_id: int
+    folder_id: int | None = None
+
+
+class PageSetActiveMessage(BaseModel):
+    type: Literal["page.set_active"]
+    page_id: int
 
 
 WebSocketMessage = Union[
@@ -176,4 +236,10 @@ WebSocketMessage = Union[
     AssetChangeSizeMessage,
     DiceRollMessage,
     ChatMessage,
+    PageCreateMessage,
+    FolderCreateMessage,
+    PageRenameMessage,
+    FolderRenameMessage,
+    PageMoveMessage,
+    PageSetActiveMessage,
 ]

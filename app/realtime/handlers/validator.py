@@ -9,6 +9,12 @@ from app.schemas.tabletop_schema import (
     AssetChangeVisibilityMessage,
     ChangeBackgroundSettingsMessage,
     AssetChangeSizeMessage,
+    PageCreateMessage,
+    FolderCreateMessage,
+    PageRenameMessage,
+    FolderRenameMessage,
+    PageMoveMessage,
+    PageSetActiveMessage,
     WebSocketMessage
 )
 from pydantic import ValidationError
@@ -25,6 +31,12 @@ MESSAGE_TYPES = {
     "dice.roll": DiceRollMessage,
     "chat.message": ChatMessage,
     "background.change_settings": ChangeBackgroundSettingsMessage,
+    "page.create": PageCreateMessage,
+    "folder.create": FolderCreateMessage,
+    "page.rename": PageRenameMessage,
+    "folder.rename": FolderRenameMessage,
+    "page.move": PageMoveMessage,
+    "page.set_active": PageSetActiveMessage,
 }
 
 

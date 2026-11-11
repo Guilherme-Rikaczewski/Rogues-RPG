@@ -16,6 +16,7 @@ async def handle_change_background_settings(
         room_code,
         user_id,
         data.model_dump(exclude_unset=True, exclude_none=True),
+        page_id=data.page_id,
     )
 
     if not settings:

@@ -3,7 +3,8 @@ from fastapi import (
     Depends,
     HTTPException,
     UploadFile,
-    File
+    File,
+    Query,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
@@ -544,6 +545,7 @@ async def read_all_assets_from_user(
 @router.get('/tabletop/{room_id}', response_model=TabletopRoomResponse)
 async def read_tabletop_content(
     room_id: int,
+    page_id: int | None = Query(default=None),
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -552,7 +554,8 @@ async def read_tabletop_content(
         room_content = await rs.get_content_from_room(
             db,
             room_id,
-            user_id
+            user_id,
+            page_id,
         )        
 
         if not room_content:

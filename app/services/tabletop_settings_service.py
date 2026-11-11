@@ -4,6 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.rooms import Room
 from app.models.room_users import RoomUser
 from app.models.tabletop_settings import TabletopSettings
+from app.models.tabletop_pages import TabletopPage
+from app.models.tabletop_page_settings import TabletopPageSettings
+from app.schemas.room_schema import RoomRole
 
 
 async def get_or_create_tabletop_settings(
@@ -35,7 +38,8 @@ async def update_room_tabletop_settings(
     room_code: str,
     user_id: int,
     settings_data: dict,
-) -> TabletopSettings | None:
+    page_id: int | None = None,
+) -> TabletopPageSettings | None:
     room_result = await db.execute(
         select(Room).where(Room.code == room_code)
     )
@@ -49,10 +53,27 @@ async def update_room_tabletop_settings(
             RoomUser.user_id == user_id,
         )
     )
-    if not membership_result.scalar_one_or_none():
+    membership = membership_result.scalar_one_or_none()
+    if not membership or membership.role != RoomRole.master:
         return None
 
-    settings = await get_or_create_tabletop_settings(db, room.id)
+    page_result = await db.execute(
+        select(TabletopPage).where(
+            TabletopPage.room_id == room.id,
+            TabletopPage.id == page_id if page_id is not None else TabletopPage.is_players_page.is_(True),
+        )
+    )
+    page = page_result.scalar_one_or_none()
+    if not page:
+        return None
+    settings_result = await db.execute(
+        select(TabletopPageSettings).where(TabletopPageSettings.page_id == page.id)
+    )
+    settings = settings_result.scalar_one_or_none()
+    if not settings:
+        settings = TabletopPageSettings(page_id=page.id)
+        db.add(settings)
+        await db.flush()
     allowed_fields = {
         "visible_grid",
         "movement_adaptable_to_grid",

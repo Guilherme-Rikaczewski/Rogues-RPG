@@ -34,6 +34,10 @@ from app.realtime.handlers.dice import (
 from app.realtime.handlers.background import (
     handle_change_background_settings
 )
+from app.realtime.handlers.pages import (
+    handle_page_create, handle_folder_create, handle_page_rename,
+    handle_folder_rename, handle_page_move, handle_page_set_active,
+)
 from app.realtime.handlers.validator import validate
 from app.db.session import get_db
 import traceback
@@ -57,6 +61,12 @@ MESSAGE_HANDLERS = {
     "chat.message": handle_chat_message,
     "dice.roll": handle_dice_roll,
     "background.change_settings": handle_change_background_settings,
+    "page.create": handle_page_create,
+    "folder.create": handle_folder_create,
+    "page.rename": handle_page_rename,
+    "folder.rename": handle_folder_rename,
+    "page.move": handle_page_move,
+    "page.set_active": handle_page_set_active,
 }
 
 
