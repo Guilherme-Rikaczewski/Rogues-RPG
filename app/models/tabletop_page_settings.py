@@ -50,7 +50,7 @@ class TabletopPageSettings(Base):
     )
 
     map_scale_value = Column(
-        Float, nullable=False, default=0, server_default="0"
+        Float, nullable=False, default=1, server_default="1"
     )
 
     map_scale_unity = Column(
