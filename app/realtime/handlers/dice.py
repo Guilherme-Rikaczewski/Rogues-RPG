@@ -5,7 +5,7 @@ from app.services.tabletop_service import (
 
 
 async def handle_dice_roll(
-    _,
+    _db,
     data,
     room_code,
     user_id,
@@ -26,7 +26,7 @@ async def handle_dice_roll(
             message={
                 'event': 'message',
                 'user_id': user_id,
-                'payload': data
+                'payload': data.model_dump()
             }
         )
         return False

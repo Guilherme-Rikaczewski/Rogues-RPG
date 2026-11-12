@@ -2,7 +2,7 @@ from app.realtime.connection.manager import manager
 
 
 async def handle_chat_message(
-    _,
+    _db,
     data,
     room_code,
     user_id,
@@ -15,7 +15,7 @@ async def handle_chat_message(
             message={
                 'event': 'message',
                 'user_id': user_id,
-                'payload': data
+                'payload': data.model_dump()
             }
         )
         return False

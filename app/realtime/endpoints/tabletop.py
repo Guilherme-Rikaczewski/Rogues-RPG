@@ -31,6 +31,9 @@ from app.realtime.handlers.chat import (
 from app.realtime.handlers.dice import (
     handle_dice_roll
 )
+from app.realtime.handlers.measure import handle_measure_update
+from app.realtime.handlers.text import handle_text_create, handle_text_update, handle_text_move, handle_text_delete
+from app.realtime.handlers.drawing import handle_drawing_create, handle_drawing_move, handle_drawing_delete
 from app.realtime.handlers.background import (
     handle_change_background_settings
 )
@@ -60,6 +63,14 @@ MESSAGE_HANDLERS = {
     "asset.insert": handle_asset_insert,
     "chat.message": handle_chat_message,
     "dice.roll": handle_dice_roll,
+    "measure.update": handle_measure_update,
+    "text.create": handle_text_create,
+    "text.update": handle_text_update,
+    "text.move": handle_text_move,
+    "text.delete": handle_text_delete,
+    "drawing.create": handle_drawing_create,
+    "drawing.move": handle_drawing_move,
+    "drawing.delete": handle_drawing_delete,
     "background.change_settings": handle_change_background_settings,
     "page.create": handle_page_create,
     "folder.create": handle_folder_create,
@@ -84,7 +95,7 @@ async def tabletop_socket(
     )
 
     try:
-        await update_user(
+        user = await update_user(
             db,
             user_id,
             user_data=UserUpdate(
@@ -96,7 +107,8 @@ async def tabletop_socket(
             room_code,
             {
                 'event': 'player.join',
-                'user_id': user_id
+                'user_id': user_id,
+                'profilepic_image_url': user.profilepic_image_url if user else None,
             }
         )
 
