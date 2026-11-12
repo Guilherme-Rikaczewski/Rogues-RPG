@@ -7,6 +7,8 @@ from app.schemas.tabletop_schema import (
     TabletopFolderResponse,
     TabletopPageResponse,
     TabletopSettingsResponse,
+    TabletopTextResponse,
+    TabletopDrawingResponse,
 )
 import enum
 
@@ -69,6 +71,8 @@ class TabletopRoomResponse(BaseModel):
     assets: list[TabletopAssetResponse] = Field(
         default_factory=list
     )
+    texts: list[TabletopTextResponse] = Field(default_factory=list)
+    drawings: list[TabletopDrawingResponse] = Field(default_factory=list)
     settings: TabletopSettingsResponse = Field(
         default_factory=TabletopSettingsResponse
     )

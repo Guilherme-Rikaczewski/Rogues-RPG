@@ -45,6 +45,42 @@ class TabletopAssetResponse(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class TabletopTextResponse(BaseModel):
+    id: int
+    page_id: int
+    content: str
+    position_x: float
+    position_y: float
+    layer: TabletopLayer
+    font_family: str
+    font_size: int
+    color: str
+    bold: bool
+    italic: bool
+    layer_order: int = 0
+
+    model_config = {'from_attributes': True}
+
+
+class DrawingPoint(BaseModel):
+    x: float = Field(ge=0, le=1000000)
+    y: float = Field(ge=0, le=1000000)
+
+
+class TabletopDrawingResponse(BaseModel):
+    id: int
+    page_id: int
+    position_x: float
+    position_y: float
+    points: list[DrawingPoint]
+    color: str
+    stroke_width: float
+    layer: TabletopLayer
+    layer_order: int = 0
+
+    model_config = {'from_attributes': True}
+
+
 class TabletopSettingsResponse(BaseModel):
     visible_grid: bool = True
     movement_adaptable_to_grid: bool = False
@@ -53,7 +89,7 @@ class TabletopSettingsResponse(BaseModel):
     background_color: str = "#949494"
     page_size_x: int = 1920
     page_size_y: int = 1080
-    map_scale_value: float = 0
+    map_scale_value: float = 1
     map_scale_unity: str = "meters"
 
     model_config = {'from_attributes': True}
@@ -89,6 +125,91 @@ class AssetMoveMessage(BaseModel):
     y: str
 
     model_config = {'from_attributes': True}
+
+
+class MeasureUpdateMessage(BaseModel):
+    type: Literal["measure.update"]
+    page_id: int
+    phase: Literal["start", "update", "end"]
+    x1: float = Field(ge=0, le=1000000)
+    y1: float = Field(ge=0, le=1000000)
+    x2: float = Field(ge=0, le=1000000)
+    y2: float = Field(ge=0, le=1000000)
+    shape: Literal["line", "circle", "square", "cone"]
+    keep: bool = False
+
+    model_config = {'from_attributes': True}
+
+
+class TextCreateMessage(BaseModel):
+    type: Literal["text.create"]
+    page_id: int
+    client_id: str = Field(min_length=1, max_length=80)
+    text_id: int | None = None
+    content: str = Field(default="", max_length=12000)
+    x: float = Field(ge=0, le=1000000)
+    y: float = Field(ge=0, le=1000000)
+    layer: TabletopLayer
+    font_family: str = Field(default="Arial", min_length=1, max_length=100)
+    font_size: int = Field(default=24, ge=6, le=200)
+    color: str = Field(default="#EFE5D5", pattern=r"^#[0-9a-fA-F]{6}$")
+    bold: bool = False
+    italic: bool = False
+
+    model_config = {'from_attributes': True}
+
+
+class TextUpdateMessage(BaseModel):
+    type: Literal["text.update"]
+    page_id: int
+    text_id: int
+    content: str | None = Field(default=None, max_length=12000)
+    font_family: str | None = Field(default=None, min_length=1, max_length=100)
+    font_size: int | None = Field(default=None, ge=6, le=200)
+    color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
+    bold: bool | None = None
+    italic: bool | None = None
+
+
+class TextMoveMessage(BaseModel):
+    type: Literal["text.move"]
+    page_id: int
+    text_id: int
+    x: float = Field(ge=0, le=1000000)
+    y: float = Field(ge=0, le=1000000)
+
+
+class TextDeleteMessage(BaseModel):
+    type: Literal["text.delete"]
+    page_id: int
+    text_id: int
+
+
+class DrawingCreateMessage(BaseModel):
+    type: Literal["drawing.create"]
+    page_id: int
+    client_id: str = Field(min_length=1, max_length=80)
+    position_x: float = Field(ge=0, le=1000000)
+    position_y: float = Field(ge=0, le=1000000)
+    points: list[DrawingPoint] = Field(min_length=1, max_length=5000)
+    color: str = Field(default="#111111", pattern=r"^#[0-9a-fA-F]{6}$")
+    stroke_width: float = Field(default=4, ge=1, le=100)
+    layer: TabletopLayer
+    drawing_id: int | None = None
+
+
+class DrawingMoveMessage(BaseModel):
+    type: Literal["drawing.move"]
+    page_id: int
+    drawing_id: int
+    position_x: float = Field(ge=0, le=1000000)
+    position_y: float = Field(ge=0, le=1000000)
+
+
+class DrawingDeleteMessage(BaseModel):
+    type: Literal["drawing.delete"]
+    page_id: int
+    drawing_id: int
 
 
 class AssetChangeLayerMessage(BaseModel):
@@ -227,6 +348,14 @@ class PageSetActiveMessage(BaseModel):
 
 WebSocketMessage = Union[
     AssetMoveMessage,
+    MeasureUpdateMessage,
+    TextCreateMessage,
+    TextUpdateMessage,
+    TextMoveMessage,
+    TextDeleteMessage,
+    DrawingCreateMessage,
+    DrawingMoveMessage,
+    DrawingDeleteMessage,
     AssetChangeLayerMessage,
     AssetChangeOrderMessage,
     AssetRemoveFromTabletopMessage,

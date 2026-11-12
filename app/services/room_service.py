@@ -7,6 +7,8 @@ from app.models.room_users import RoomUser
 from app.models.notes import Note
 from app.models.tabletop_page_settings import TabletopPageSettings
 from app.services.tabletop_page_service import ensure_room_pages, get_page_assets, get_page_previews
+from app.services.tabletop_text_service import list_page_texts
+from app.services.tabletop_drawing_service import list_page_drawings
 from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
@@ -434,8 +436,12 @@ async def get_content_from_room(
         )
         tabletop_settings = settings_result.scalar_one()
         assets = await get_page_assets(db, room_id, selected_page.id)
+        texts = await list_page_texts(db, room_id, selected_page.id)
+        drawings = await list_page_drawings(db, room_id, selected_page.id)
         if user_room.role != RoomRole.master:
             assets = [asset for asset in assets if asset.layer != TabletopLayer.master]
+            texts = [item for item in texts if item.layer != TabletopLayer.master]
+            drawings = [item for item in drawings if item.layer != TabletopLayer.master]
         page_previews = await get_page_previews(db, room_id, pages)
 
         # Busca todas as notas da sala
@@ -452,6 +458,8 @@ async def get_content_from_room(
                 for note in notes
             ],
             assets=assets,
+            texts=texts,
+            drawings=drawings,
             settings=tabletop_settings,
             pages=([
                 TabletopPageResponse.model_validate(page).model_copy(
