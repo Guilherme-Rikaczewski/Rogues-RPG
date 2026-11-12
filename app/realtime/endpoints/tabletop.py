@@ -18,14 +18,28 @@ from app.schemas.user_schema import (
 )
 from app.realtime.handlers.asset import (
     handle_asset_change_layer,
+    handle_asset_change_order,
+    handle_asset_remove_from_tabletop,
     handle_asset_move,
-    handle_asset_insert
+    handle_asset_insert,
+    handle_asset_change_visibility,
+    handle_asset_change_size
 )
 from app.realtime.handlers.chat import (
     handle_chat_message
 )
 from app.realtime.handlers.dice import (
     handle_dice_roll
+)
+from app.realtime.handlers.measure import handle_measure_update
+from app.realtime.handlers.text import handle_text_create, handle_text_update, handle_text_move, handle_text_delete
+from app.realtime.handlers.drawing import handle_drawing_create, handle_drawing_move, handle_drawing_delete
+from app.realtime.handlers.background import (
+    handle_change_background_settings
+)
+from app.realtime.handlers.pages import (
+    handle_page_create, handle_folder_create, handle_page_rename,
+    handle_folder_rename, handle_page_move, handle_page_set_active,
 )
 from app.realtime.handlers.validator import validate
 from app.db.session import get_db
@@ -42,9 +56,28 @@ router = APIRouter(
 MESSAGE_HANDLERS = {
     "asset.move": handle_asset_move,
     "asset.change_layer": handle_asset_change_layer,
+    "asset.change_order": handle_asset_change_order,
+    "asset.remove_from_tabletop": handle_asset_remove_from_tabletop,
+    "asset.change_visibility": handle_asset_change_visibility,
+    "asset.change_size": handle_asset_change_size,
     "asset.insert": handle_asset_insert,
     "chat.message": handle_chat_message,
     "dice.roll": handle_dice_roll,
+    "measure.update": handle_measure_update,
+    "text.create": handle_text_create,
+    "text.update": handle_text_update,
+    "text.move": handle_text_move,
+    "text.delete": handle_text_delete,
+    "drawing.create": handle_drawing_create,
+    "drawing.move": handle_drawing_move,
+    "drawing.delete": handle_drawing_delete,
+    "background.change_settings": handle_change_background_settings,
+    "page.create": handle_page_create,
+    "folder.create": handle_folder_create,
+    "page.rename": handle_page_rename,
+    "folder.rename": handle_folder_rename,
+    "page.move": handle_page_move,
+    "page.set_active": handle_page_set_active,
 }
 
 
@@ -62,7 +95,7 @@ async def tabletop_socket(
     )
 
     try:
-        await update_user(
+        user = await update_user(
             db,
             user_id,
             user_data=UserUpdate(
@@ -74,7 +107,8 @@ async def tabletop_socket(
             room_code,
             {
                 'event': 'player.join',
-                'user_id': user_id
+                'user_id': user_id,
+                'profilepic_image_url': user.profilepic_image_url if user else None,
             }
         )
 

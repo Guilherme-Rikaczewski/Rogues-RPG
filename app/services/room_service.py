@@ -5,15 +5,19 @@ from app.models.rooms import Room
 from app.models.users import User
 from app.models.room_users import RoomUser
 from app.models.notes import Note
-from app.models.tabletop_assets import TabletopAssets
+from app.models.tabletop_page_settings import TabletopPageSettings
+from app.services.tabletop_page_service import ensure_room_pages, get_page_assets, get_page_previews
+from app.services.tabletop_text_service import list_page_texts
+from app.services.tabletop_drawing_service import list_page_drawings
 from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
+    RoomRole,
     UsersRoomResponse,
     UserInRoom,
     TabletopRoomResponse,
 )
-from app.schemas.tabletop_schema import TabletopAssetResponse
+from app.schemas.tabletop_schema import TabletopLayer, TabletopPageResponse
 from app.schemas.note_schema import NoteResponse
 from app.utils.code import generate_code
 from app.utils.user_file_manager import (
@@ -405,7 +409,8 @@ async def get_all_users_on_room(
 async def get_content_from_room(
     db: AsyncSession,
     room_id: int,
-    user_id: int
+    user_id: int,
+    requested_page_id: int | None = None,
 ) -> TabletopRoomResponse | None:
     try:
         # Verifica se o usuário pertence à sala
@@ -421,13 +426,23 @@ async def get_content_from_room(
         if not user_room:
             return None
 
-        # Busca todos os assets da sala
-        result_assets = await db.execute(
-            select(TabletopAssets)
-            .where(TabletopAssets.room_id == room_id)
-        )
+        pages, folders, active_page = await ensure_room_pages(db, room_id)
+        selected_page = next((page for page in pages if page.id == requested_page_id), None)
+        if user_room.role != RoomRole.master or selected_page is None:
+            selected_page = active_page
 
-        assets = result_assets.scalars().all()
+        settings_result = await db.execute(
+            select(TabletopPageSettings).where(TabletopPageSettings.page_id == selected_page.id)
+        )
+        tabletop_settings = settings_result.scalar_one()
+        assets = await get_page_assets(db, room_id, selected_page.id)
+        texts = await list_page_texts(db, room_id, selected_page.id)
+        drawings = await list_page_drawings(db, room_id, selected_page.id)
+        if user_room.role != RoomRole.master:
+            assets = [asset for asset in assets if asset.layer != TabletopLayer.master]
+            texts = [item for item in texts if item.layer != TabletopLayer.master]
+            drawings = [item for item in drawings if item.layer != TabletopLayer.master]
+        page_previews = await get_page_previews(db, room_id, pages)
 
         # Busca todas as notas da sala
         result_notes = await db.execute(
@@ -442,10 +457,23 @@ async def get_content_from_room(
                 NoteResponse.model_validate(note)
                 for note in notes
             ],
-            assets=[
-                TabletopAssetResponse.model_validate(asset)
-                for asset in assets
-            ]
+            assets=assets,
+            texts=texts,
+            drawings=drawings,
+            settings=tabletop_settings,
+            pages=([
+                TabletopPageResponse.model_validate(page).model_copy(
+                    update={"preview_image_url": page_previews.get(page.id)}
+                )
+                for page in pages
+            ] if user_room.role == RoomRole.master else [
+                TabletopPageResponse.model_validate(active_page).model_copy(
+                    update={"folder_id": None, "preview_image_url": page_previews.get(active_page.id)}
+                )
+            ]),
+            folders=(folders if user_room.role == RoomRole.master else []),
+            page_id=selected_page.id,
+            active_page_id=active_page.id,
         )
 
     except Exception:
