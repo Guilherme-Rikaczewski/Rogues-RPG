@@ -9,6 +9,13 @@ class Room(Base):
 
     room_name = Column(String(100), nullable=False)
 
+    game_system = Column(
+        String(64),
+        nullable=False,
+        default='D&D5e',
+        server_default='D&D5e'
+    )
+
     code = Column(String(6), unique=True, nullable=False, index=True)
 
     thumb_image_url = Column(Text, nullable=False, default='')
