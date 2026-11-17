@@ -34,6 +34,7 @@ from app.realtime.handlers.dice import (
 from app.realtime.handlers.measure import handle_measure_update
 from app.realtime.handlers.text import handle_text_create, handle_text_update, handle_text_move, handle_text_delete
 from app.realtime.handlers.drawing import handle_drawing_create, handle_drawing_move, handle_drawing_delete
+from app.realtime.handlers.mask import handle_mask_create, handle_mask_delete, handle_mask_opacity
 from app.realtime.handlers.background import (
     handle_change_background_settings
 )
@@ -71,6 +72,9 @@ MESSAGE_HANDLERS = {
     "drawing.create": handle_drawing_create,
     "drawing.move": handle_drawing_move,
     "drawing.delete": handle_drawing_delete,
+    "mask.create": handle_mask_create,
+    "mask.delete": handle_mask_delete,
+    "mask.opacity": handle_mask_opacity,
     "background.change_settings": handle_change_background_settings,
     "page.create": handle_page_create,
     "folder.create": handle_folder_create,

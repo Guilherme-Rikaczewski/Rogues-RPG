@@ -9,6 +9,7 @@ from app.models.tabletop_page_settings import TabletopPageSettings
 from app.services.tabletop_page_service import ensure_room_pages, get_page_assets, get_page_previews
 from app.services.tabletop_text_service import list_page_texts
 from app.services.tabletop_drawing_service import list_page_drawings
+from app.services.tabletop_mask_service import get_page_mask_opacity, list_page_masks
 from app.schemas.room_schema import (
     RoomCreate,
     RoomUpdate,
@@ -166,6 +167,7 @@ async def get_all_rooms_from_user(
                 rooms_map[room.id] = {
                     "id": room.id,
                     "room_name": room.room_name,
+                    "game_system": room.game_system,
                     "code": room.code,
                     "role": role,
                     "thumb_image_url": room.thumb_image_url,
@@ -217,6 +219,7 @@ async def get_recent_rooms_from_user(
             result.append({
                 "id": room.id,
                 "room_name": room.room_name,
+                "game_system": room.game_system,
                 "code": room.code,
                 "role": role,
                 "thumb_image_url": room.thumb_image_url,
@@ -438,6 +441,8 @@ async def get_content_from_room(
         assets = await get_page_assets(db, room_id, selected_page.id)
         texts = await list_page_texts(db, room_id, selected_page.id)
         drawings = await list_page_drawings(db, room_id, selected_page.id)
+        masks = await list_page_masks(db, room_id, selected_page.id)
+        dm_darkness_opacity = await get_page_mask_opacity(db, selected_page.id)
         if user_room.role != RoomRole.master:
             assets = [asset for asset in assets if asset.layer != TabletopLayer.master]
             texts = [item for item in texts if item.layer != TabletopLayer.master]
@@ -460,6 +465,8 @@ async def get_content_from_room(
             assets=assets,
             texts=texts,
             drawings=drawings,
+            masks=masks,
+            dm_darkness_opacity=dm_darkness_opacity,
             settings=tabletop_settings,
             pages=([
                 TabletopPageResponse.model_validate(page).model_copy(

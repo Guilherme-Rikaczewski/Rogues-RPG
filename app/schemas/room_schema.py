@@ -9,6 +9,7 @@ from app.schemas.tabletop_schema import (
     TabletopSettingsResponse,
     TabletopTextResponse,
     TabletopDrawingResponse,
+    TabletopMaskResponse,
 )
 import enum
 
@@ -18,8 +19,14 @@ class RoomRole(str, enum.Enum):
     player = "player"
 
 
+class RoomGameSystem(str, enum.Enum):
+    DND5e = "D&D5e"
+    T20 = "T20"
+
+
 class RoomCreate(BaseModel):
     room_name: RoomName
+    game_system: RoomGameSystem = RoomGameSystem.DND5e
     thumb_image_url: str = ''
     thumb_image_size: int = 0
     thumb_image_public_id: str = ''
@@ -32,6 +39,7 @@ class RoomUpdate(BaseModel):
 class RoomResponse(BaseModel):
     id: int
     room_name: RoomName
+    game_system: RoomGameSystem
     code: RoomCode
     role: RoomRole
     thumb_image_url: str
@@ -73,6 +81,8 @@ class TabletopRoomResponse(BaseModel):
     )
     texts: list[TabletopTextResponse] = Field(default_factory=list)
     drawings: list[TabletopDrawingResponse] = Field(default_factory=list)
+    masks: list[TabletopMaskResponse] = Field(default_factory=list)
+    dm_darkness_opacity: int = 45
     settings: TabletopSettingsResponse = Field(
         default_factory=TabletopSettingsResponse
     )

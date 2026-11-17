@@ -11,12 +11,17 @@ from app.db.base import Base
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.cache.client import connection
+from sqlalchemy import text
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text(
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS game_system "
+            "VARCHAR(64) NOT NULL DEFAULT 'D&D5e'"
+        ))
 
     yield
 

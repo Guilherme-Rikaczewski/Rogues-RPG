@@ -81,6 +81,23 @@ class TabletopDrawingResponse(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class MaskPoint(BaseModel):
+    # Coordinates may extend beyond the tabletop. The SVG viewport clips the
+    # mask visually, while preserving the complete gesture for later edits.
+    x: float = Field(ge=-1000000, le=1000000)
+    y: float = Field(ge=-1000000, le=1000000)
+
+
+class TabletopMaskResponse(BaseModel):
+    id: int
+    page_id: int
+    operation: Literal["hide", "reveal"]
+    shape: Literal["rectangle", "circle", "polygon", "full_page"]
+    points: list[MaskPoint]
+
+    model_config = {'from_attributes': True}
+
+
 class TabletopSettingsResponse(BaseModel):
     visible_grid: bool = True
     movement_adaptable_to_grid: bool = False
@@ -210,6 +227,30 @@ class DrawingDeleteMessage(BaseModel):
     type: Literal["drawing.delete"]
     page_id: int
     drawing_id: int
+
+
+class MaskCreateMessage(BaseModel):
+    type: Literal["mask.create"]
+    page_id: int
+    client_id: str = Field(min_length=1, max_length=80)
+    operation: Literal["hide", "reveal"]
+    shape: Literal["rectangle", "circle", "polygon", "full_page"]
+    points: list[MaskPoint] = Field(max_length=2000)
+    mask_id: int | None = None
+
+
+class MaskDeleteMessage(BaseModel):
+    type: Literal["mask.delete"]
+    page_id: int
+    mask_id: int
+
+
+class MaskOpacityMessage(BaseModel):
+    type: Literal["mask.opacity"]
+    page_id: int
+    opacity: int = Field(ge=0, le=100)
+
+
 
 
 class AssetChangeLayerMessage(BaseModel):
@@ -356,6 +397,9 @@ WebSocketMessage = Union[
     DrawingCreateMessage,
     DrawingMoveMessage,
     DrawingDeleteMessage,
+    MaskCreateMessage,
+    MaskDeleteMessage,
+    MaskOpacityMessage,
     AssetChangeLayerMessage,
     AssetChangeOrderMessage,
     AssetRemoveFromTabletopMessage,
