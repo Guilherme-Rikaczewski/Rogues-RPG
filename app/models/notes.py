@@ -29,3 +29,14 @@ class Note(Base):
         nullable=False,
         index=True
     )
+
+    page_id = Column(
+        Integer,
+        ForeignKey("tabletop_pages.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    width = Column(String(256), nullable=True)
+
+    height = Column(String(256), nullable=True)
