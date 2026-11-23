@@ -4,7 +4,7 @@ from sqlalchemy import select
 from app.models.rooms import Room
 from app.models.users import User
 from app.models.room_users import RoomUser
-from app.models.notes import Note
+from app.services.notes_service import assign_legacy_notes_to_page, get_all_notes_from_room, get_note_folders
 from app.models.tabletop_page_settings import TabletopPageSettings
 from app.services.tabletop_page_service import ensure_room_pages, get_page_assets, get_page_previews
 from app.services.tabletop_text_service import list_page_texts
@@ -19,7 +19,6 @@ from app.schemas.room_schema import (
     TabletopRoomResponse,
 )
 from app.schemas.tabletop_schema import TabletopLayer, TabletopPageResponse
-from app.schemas.note_schema import NoteResponse
 from app.utils.code import generate_code
 from app.utils.user_file_manager import (
     upload_image,
@@ -449,19 +448,13 @@ async def get_content_from_room(
             drawings = [item for item in drawings if item.layer != TabletopLayer.master]
         page_previews = await get_page_previews(db, room_id, pages)
 
-        # Busca todas as notas da sala
-        result_notes = await db.execute(
-            select(Note)
-            .where(Note.room_id == room_id)
-        )
-
-        notes = result_notes.scalars().all()
+        await assign_legacy_notes_to_page(db, room_id, selected_page.id)
+        notes = await get_all_notes_from_room(db, user_id, room_id, selected_page.id)
+        note_folders = await get_note_folders(db, user_id, room_id)
 
         return TabletopRoomResponse(
-            notes=[
-                NoteResponse.model_validate(note)
-                for note in notes
-            ],
+            notes=notes,
+            note_folders=note_folders,
             assets=assets,
             texts=texts,
             drawings=drawings,

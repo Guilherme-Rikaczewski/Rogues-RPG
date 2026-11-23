@@ -2,13 +2,17 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Query,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.schemas.note_schema import (
     NoteCreate,
     NoteUpdate,
-    NoteResponse
+    NoteResponse,
+    NoteFolderCreate,
+    NoteFolderRename,
+    NoteFolderResponse,
 )
 import app.services.notes_service as ns
 from app.services.auth_service import get_current_user_id
@@ -28,7 +32,13 @@ async def create(
 ):
 
     try:
-        return await ns.create_note(db, note, user_id)
+        created_note = await ns.create_note(db, note, user_id)
+        if not created_note:
+            raise HTTPException(status_code=403, detail="Room membership required")
+        return created_note
+
+    except HTTPException:
+        raise
 
     except Exception as error:
         raise HTTPException(
@@ -106,6 +116,7 @@ async def read(
 @router.get('/all/{room_id}')
 async def read_all(
     room_id: int,
+    page_id: int = Query(...),
     user_id: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -113,14 +124,9 @@ async def read_all(
         notes = await ns.get_all_notes_from_room(
             db,
             user_id,
-            room_id
+            room_id,
+            page_id,
         )
-
-        if not notes:
-            raise HTTPException(
-                404,
-                detail='Notes not found'
-            )
 
         return notes
 
@@ -132,6 +138,40 @@ async def read_all(
             500,
             detail=f'Internal server error: {error}'
         )
+
+
+@router.get('/folders/{room_id}', response_model=list[NoteFolderResponse])
+async def read_folders(
+    room_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    return await ns.get_note_folders(db, user_id, room_id)
+
+
+@router.post('/folders', response_model=NoteFolderResponse)
+async def create_folder(
+    folder: NoteFolderCreate,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    created = await ns.create_note_folder(db, folder.room_id, user_id)
+    if not created:
+        raise HTTPException(status_code=403, detail="Room membership required")
+    return created
+
+
+@router.patch('/folders/{folder_id}', response_model=NoteFolderResponse)
+async def rename_folder(
+    folder_id: int,
+    folder: NoteFolderRename,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    updated = await ns.rename_note_folder(db, folder_id, user_id, folder.name)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return updated
 
 
 @router.delete('/{note_id}', status_code=204)

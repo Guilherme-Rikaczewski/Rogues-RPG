@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from app.schemas.types import RoomName, RoomCode, Username
-from app.schemas.note_schema import NoteResponse
+from app.schemas.note_schema import NoteResponse, NoteFolderResponse
 from app.schemas.tabletop_schema import (
     TabletopAssetResponse,
     TabletopFolderResponse,
@@ -76,6 +76,7 @@ class TabletopRoomResponse(BaseModel):
     notes: list[NoteResponse] = Field(
         default_factory=list
     )
+    note_folders: list[NoteFolderResponse] = Field(default_factory=list)
     assets: list[TabletopAssetResponse] = Field(
         default_factory=list
     )

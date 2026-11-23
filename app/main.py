@@ -22,6 +22,19 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS game_system "
             "VARCHAR(64) NOT NULL DEFAULT 'D&D5e'"
         ))
+        await conn.execute(text(
+            "ALTER TABLE notes ADD COLUMN IF NOT EXISTS page_id "
+            "INTEGER REFERENCES tabletop_pages(id) ON DELETE CASCADE"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE notes ADD COLUMN IF NOT EXISTS width VARCHAR(256)"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE notes ADD COLUMN IF NOT EXISTS height VARCHAR(256)"
+        ))
+        await conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_notes_page_id ON notes (page_id)"
+        ))
 
     yield
 
