@@ -38,6 +38,7 @@ class RoomUpdate(BaseModel):
 
 class RoomResponse(BaseModel):
     id: int
+    public_id: str
     room_name: RoomName
     game_system: RoomGameSystem
     code: RoomCode

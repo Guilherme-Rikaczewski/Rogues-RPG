@@ -24,12 +24,13 @@ async def handle_drawing_create(db, data, room_code, user_id):
     master = await is_room_master(db, room_code, user_id)
     if not master and data.layer != TabletopLayer.players:
         return await _reject(room_code, user_id, "Players can only draw on their layer")
-    values = data.model_dump(exclude={"type", "page_id", "client_id", "drawing_id"})
+    values = data.model_dump(exclude={"type", "page_id", "client_id", "drawing_id", "layer_order"})
     values["points"] = [point.model_dump() for point in data.points]
     drawing = await create_page_drawing(db, room_code, user_id, data.page_id, values)
     if not drawing:
         return await _reject(room_code, user_id, "Can't draw on this page")
     data.drawing_id = drawing.id
+    data.layer_order = drawing.layer_order
     return True
 
 

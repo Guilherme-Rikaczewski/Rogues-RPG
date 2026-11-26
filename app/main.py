@@ -23,6 +23,19 @@ async def lifespan(app: FastAPI):
             "VARCHAR(64) NOT NULL DEFAULT 'D&D5e'"
         ))
         await conn.execute(text(
+            "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS public_id VARCHAR(64)"
+        ))
+        await conn.execute(text(
+            "UPDATE rooms SET public_id = gen_random_uuid()::text "
+            "WHERE public_id IS NULL"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE rooms ALTER COLUMN public_id SET NOT NULL"
+        ))
+        await conn.execute(text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_rooms_public_id ON rooms (public_id)"
+        ))
+        await conn.execute(text(
             "ALTER TABLE notes ADD COLUMN IF NOT EXISTS page_id "
             "INTEGER REFERENCES tabletop_pages(id) ON DELETE CASCADE"
         ))
@@ -34,6 +47,22 @@ async def lifespan(app: FastAPI):
         ))
         await conn.execute(text(
             "CREATE INDEX IF NOT EXISTS ix_notes_page_id ON notes (page_id)"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE tabletop_assets ADD COLUMN IF NOT EXISTS "
+            "token_settings JSONB NOT NULL DEFAULT '{}'::jsonb"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE tabletop_page_assets ADD COLUMN IF NOT EXISTS "
+            "owner_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE tabletop_assets ADD COLUMN IF NOT EXISTS "
+            "token_sheet_id INTEGER REFERENCES sheets(id) ON DELETE SET NULL"
+        ))
+        await conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_tabletop_assets_token_sheet_id "
+            "ON tabletop_assets (token_sheet_id)"
         ))
 
     yield

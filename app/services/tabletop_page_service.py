@@ -8,6 +8,8 @@ from app.models.tabletop_page_assets import TabletopPageAsset
 from app.models.tabletop_pages import TabletopPage
 from app.models.tabletop_page_settings import TabletopPageSettings
 from app.models.tabletop_settings import TabletopSettings
+from app.models.sheets import Sheet
+from app.models.sheet_user import SheetUser
 from app.schemas.room_schema import RoomRole
 from app.schemas.tabletop_schema import TabletopAssetResponse, TabletopLayer
 
@@ -144,6 +146,7 @@ async def get_page_assets(
     db: AsyncSession,
     room_id: int,
     page_id: int,
+    user_id: int | None = None,
 ) -> list[TabletopAssetResponse]:
     assets_result = await db.execute(
         select(TabletopAssets)
@@ -151,6 +154,19 @@ async def get_page_assets(
         .order_by(TabletopAssets.id)
     )
     assets = assets_result.scalars().all()
+    linked_sheet_ids = {
+        asset.id: asset.token_sheet_id or asset.sheet_id
+        for asset in assets if asset.token_sheet_id is not None or asset.sheet_id is not None
+    }
+    sheet_ids = list(set(linked_sheet_ids.values()))
+    accessible_sheets = {}
+    if user_id is not None and sheet_ids:
+        sheet_result = await db.execute(
+            select(Sheet)
+            .join(SheetUser, SheetUser.sheet_id == Sheet.id)
+            .where(Sheet.id.in_(sheet_ids), SheetUser.user_id == user_id)
+        )
+        accessible_sheets = {sheet.id: sheet for sheet in sheet_result.scalars().all()}
 
     placements_result = await db.execute(
         select(TabletopPageAsset).where(TabletopPageAsset.page_id == page_id)
@@ -160,11 +176,38 @@ async def get_page_assets(
     responses = []
     for asset in assets:
         placement = placements.get(asset.id)
+        linked_sheet_id = linked_sheet_ids.get(asset.id)
+        sheet = accessible_sheets.get(linked_sheet_id)
+        sheet_content = sheet.content if sheet else {}
+        inventory = sheet_content.get("inventory", {})
+        items = inventory.get("items", []) if isinstance(inventory, dict) else []
+        money = inventory.get("money", {}) if isinstance(inventory, dict) else {}
+        item_weight = sum(
+            (item.get("quantity", 0) or 0) * (item.get("weight", 0) or 0)
+            for item in items if isinstance(item, dict)
+        )
+        coin_weight = sum((money.get(coin, 0) or 0) for coin in ("cp", "sp", "ep", "gp", "pp")) / 50 if isinstance(money, dict) else 0
+        strength = sheet_content.get("attributes", {}).get("str", {}).get("value", 0) if isinstance(sheet_content.get("attributes", {}), dict) else 0
+        sheet_components = {}
+        if sheet:
+            hp_current = sheet_content.get("current_hp") or 0
+            hp_max = sheet_content.get("total_hp")
+            temp_hp = sheet_content.get("temp_hp") or 0
+            sheet_components = {
+                "hp": {"label": "Hit Points (HP)", "current": hp_current, "max": hp_max},
+                "temp_hp": {"label": "Temp HP", "current": temp_hp, "max": temp_hp},
+                "weight": {"label": "Total Weight", "current": item_weight + coin_weight, "max": (strength or 0) * 15},
+            }
         responses.append(TabletopAssetResponse.model_validate({
             "id": asset.id,
             "asset_image_url": asset.asset_image_url,
             "asset_image_public_id": asset.asset_image_public_id,
             "asset_image_file_name": asset.asset_image_file_name,
+            "sheet_id": sheet.id if sheet else None,
+            "sheet_name": sheet.name if sheet else None,
+            "sheet_components": sheet_components,
+            "token_settings": asset.token_settings or {},
+            "owner_user_id": (placement.owner_user_id or asset.user_id) if placement else asset.user_id,
             "layer": placement.layer if placement else None,
             "position_x": placement.position_x if placement else None,
             "position_y": placement.position_y if placement else None,

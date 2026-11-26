@@ -26,6 +26,7 @@ from app.utils.user_file_manager import (
 )
 from fastapi import UploadFile
 from sqlalchemy.orm import aliased
+import secrets
 
 
 async def create_room(
@@ -38,6 +39,8 @@ async def create_room(
         while True:
 
             room = Room(**room_data.model_dump())
+
+            room.public_id = secrets.token_urlsafe(32)
 
             room.code = generate_code()
 
@@ -120,6 +123,16 @@ async def get_room(
         raise
 
 
+async def get_room_by_public_id(
+    db: AsyncSession,
+    public_id: str
+) -> Room | None:
+    result = await db.execute(
+        select(Room).where(Room.public_id == public_id)
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_all_rooms_from_user(
     db: AsyncSession,
     user_id: int
@@ -165,6 +178,7 @@ async def get_all_rooms_from_user(
 
                 rooms_map[room.id] = {
                     "id": room.id,
+                    "public_id": room.public_id,
                     "room_name": room.room_name,
                     "game_system": room.game_system,
                     "code": room.code,
@@ -217,6 +231,7 @@ async def get_recent_rooms_from_user(
 
             result.append({
                 "id": room.id,
+                "public_id": room.public_id,
                 "room_name": room.room_name,
                 "game_system": room.game_system,
                 "code": room.code,
@@ -437,7 +452,7 @@ async def get_content_from_room(
             select(TabletopPageSettings).where(TabletopPageSettings.page_id == selected_page.id)
         )
         tabletop_settings = settings_result.scalar_one()
-        assets = await get_page_assets(db, room_id, selected_page.id)
+        assets = await get_page_assets(db, room_id, selected_page.id, user_id)
         texts = await list_page_texts(db, room_id, selected_page.id)
         drawings = await list_page_drawings(db, room_id, selected_page.id)
         masks = await list_page_masks(db, room_id, selected_page.id)

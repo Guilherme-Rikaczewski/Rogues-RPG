@@ -203,7 +203,8 @@ async def get_all_assets_from_user_in_room(
     result = await db.execute(
         select(TabletopAssets).where(
             TabletopAssets.user_id == user_id,
-            TabletopAssets.room_id == room_id
+            TabletopAssets.room_id == room_id,
+            TabletopAssets.asset_image_public_id != ''
         )
     )
 

@@ -148,6 +148,7 @@ class Inventory(BaseModel):
     items: list[Item] = Field(
         default_factory=list
     )
+    total_weight: float | None = 0
 
 
 class Trait(BaseModel):
@@ -206,7 +207,8 @@ class Spell(BaseModel):
 
 
 class SlotSpec(BaseModel):
-    value: int = 0
+    total_value: int = 0
+    current_value: int = 0
     mod: int = 0
 
 

@@ -26,7 +26,7 @@ class AssetUpdate(BaseModel):
     visible: bool | None = None
     height: str | None = None
     width: str | None = None
-    layer_order: int | None = None
+    layer_order: int | None = Field(default=None, ge=0)
 
 
 class TabletopAssetResponse(BaseModel):
@@ -34,6 +34,11 @@ class TabletopAssetResponse(BaseModel):
     asset_image_url: str = ''
     asset_image_public_id: str = ''
     asset_image_file_name: str = ''
+    sheet_id: int | None = None
+    sheet_name: str | None = None
+    sheet_components: dict = Field(default_factory=dict)
+    token_settings: dict = Field(default_factory=dict)
+    owner_user_id: int | None = None
     position_x: str | None
     position_y: str | None
     layer: TabletopLayer | None
@@ -172,6 +177,7 @@ class TextCreateMessage(BaseModel):
     color: str = Field(default="#EFE5D5", pattern=r"^#[0-9a-fA-F]{6}$")
     bold: bool = False
     italic: bool = False
+    layer_order: int | None = Field(default=None, ge=0)
 
     model_config = {'from_attributes': True}
 
@@ -213,6 +219,7 @@ class DrawingCreateMessage(BaseModel):
     stroke_width: float = Field(default=4, ge=1, le=100)
     layer: TabletopLayer
     drawing_id: int | None = None
+    layer_order: int | None = Field(default=None, ge=0)
 
 
 class DrawingMoveMessage(BaseModel):
@@ -291,6 +298,34 @@ class AssetInsertMessage(BaseModel):
     asset_data: AssetUpdate
 
     model_config = {'from_attributes': True}
+
+
+class AssetCreateFromImageMessage(BaseModel):
+    type: Literal["asset.create_from_image"]
+
+    asset_id: int | None = None
+    source_asset_id: int
+    page_id: int
+    asset_data: AssetUpdate
+
+    model_config = {'from_attributes': True}
+
+
+class AssetTokenSettingsMessage(BaseModel):
+    type: Literal["asset.update_token_settings"]
+    asset_id: int
+    page_id: int
+    token_settings: dict
+
+
+class AssetDuplicateMessage(BaseModel):
+    type: Literal["asset.duplicate"]
+    asset_id: int
+    page_id: int
+    position_x: str
+    position_y: str
+    layer_order: int
+    asset_data: dict | None = None
 
 
 class DiceRollMessage(BaseModel):
@@ -404,6 +439,9 @@ WebSocketMessage = Union[
     AssetChangeOrderMessage,
     AssetRemoveFromTabletopMessage,
     AssetInsertMessage,
+    AssetCreateFromImageMessage,
+    AssetTokenSettingsMessage,
+    AssetDuplicateMessage,
     AssetChangeVisibilityMessage,
     ChangeBackgroundSettingsMessage,
     AssetChangeSizeMessage,

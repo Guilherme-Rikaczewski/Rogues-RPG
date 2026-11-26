@@ -24,12 +24,13 @@ async def handle_text_create(db, data, room_code, user_id):
     master = await is_room_master(db, room_code, user_id)
     if not master and data.layer != TabletopLayer.players:
         return await _reject(room_code, user_id, "Players can only create text on their layer")
-    values = data.model_dump(exclude={"type", "page_id", "client_id", "text_id", "x", "y"})
+    values = data.model_dump(exclude={"type", "page_id", "client_id", "text_id", "x", "y", "layer_order"})
     values.update(position_x=data.x, position_y=data.y)
     text = await create_page_text(db, room_code, user_id, data.page_id, values)
     if not text:
         return await _reject(room_code, user_id, "Can't create text on this page")
     data.text_id = text.id
+    data.layer_order = text.layer_order
     return True
 
 

@@ -128,6 +128,24 @@ async def update(
         )
 
 
+@router.get('/public/{public_id}', response_model=RoomResponse)
+async def read_by_public_id(
+    public_id: str,
+    user_id: int = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db)
+):
+    room = await rs.get_room_by_public_id(db, public_id)
+    if not room:
+        raise HTTPException(404, detail='Room not found')
+
+    room_user = await rus.read_role_room_user(db, room.id, user_id)
+    if not room_user:
+        raise HTTPException(403, detail='Permission denied')
+
+    setattr(room, 'role', room_user.role)
+    return room
+
+
 @router.get('/{room_id}', response_model=RoomResponse)
 async def read(
     room_id: int,

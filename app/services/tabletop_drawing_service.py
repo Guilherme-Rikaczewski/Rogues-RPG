@@ -5,6 +5,7 @@ from app.models.rooms import Room
 from app.models.room_users import RoomUser
 from app.models.tabletop_drawings import TabletopDrawing
 from app.models.tabletop_pages import TabletopPage
+from app.services.tabletop_stack_order_service import next_page_layer_order
 
 
 async def _accessible_page(db: AsyncSession, room_code: str, user_id: int, page_id: int):
@@ -38,6 +39,11 @@ async def get_drawing_for_user(db: AsyncSession, room_code: str, user_id: int, p
 async def create_page_drawing(db: AsyncSession, room_code: str, user_id: int, page_id: int, values: dict):
     if not await _accessible_page(db, room_code, user_id, page_id):
         return None
+    layer_order = await next_page_layer_order(db, page_id, values["layer"])
+    if layer_order is None:
+        await db.rollback()
+        return None
+    values = {**values, "layer_order": layer_order}
     drawing = TabletopDrawing(page_id=page_id, user_id=user_id, **values)
     db.add(drawing)
     await db.commit()
