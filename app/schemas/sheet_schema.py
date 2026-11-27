@@ -41,6 +41,7 @@ class SheetResponse(BaseModel):
 
 class SheetRoomResponse(BaseModel):
     id: int
+    public_id: str | None = None
     room_name: str
     code: str
 
