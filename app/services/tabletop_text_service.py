@@ -5,6 +5,7 @@ from app.models.tabletop_pages import TabletopPage
 from app.models.tabletop_texts import TabletopText
 from app.models.rooms import Room
 from app.models.room_users import RoomUser
+from app.services.tabletop_stack_order_service import next_page_layer_order
 
 
 async def _accessible_page(db: AsyncSession, room_code: str, user_id: int, page_id: int):
@@ -39,6 +40,11 @@ async def create_page_text(db: AsyncSession, room_code: str, user_id: int, page_
     page = await _accessible_page(db, room_code, user_id, page_id)
     if not page:
         return None
+    layer_order = await next_page_layer_order(db, page_id, values["layer"])
+    if layer_order is None:
+        await db.rollback()
+        return None
+    values = {**values, "layer_order": layer_order}
     text = TabletopText(page_id=page_id, user_id=user_id, **values)
     db.add(text)
     await db.commit()

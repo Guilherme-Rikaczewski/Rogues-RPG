@@ -7,6 +7,8 @@ class Room(Base):
 
     id = Column(Integer, primary_key=True)
 
+    public_id = Column(String(64), unique=True, nullable=False, index=True)
+
     room_name = Column(String(100), nullable=False)
 
     game_system = Column(

@@ -22,8 +22,11 @@ from app.realtime.handlers.asset import (
     handle_asset_remove_from_tabletop,
     handle_asset_move,
     handle_asset_insert,
+    handle_asset_create_from_image,
     handle_asset_change_visibility,
-    handle_asset_change_size
+    handle_asset_change_size,
+    handle_asset_update_token_settings,
+    handle_asset_duplicate
 )
 from app.realtime.handlers.chat import (
     handle_chat_message
@@ -62,6 +65,9 @@ MESSAGE_HANDLERS = {
     "asset.change_visibility": handle_asset_change_visibility,
     "asset.change_size": handle_asset_change_size,
     "asset.insert": handle_asset_insert,
+    "asset.create_from_image": handle_asset_create_from_image,
+    "asset.update_token_settings": handle_asset_update_token_settings,
+    "asset.duplicate": handle_asset_duplicate,
     "chat.message": handle_chat_message,
     "dice.roll": handle_dice_roll,
     "measure.update": handle_measure_update,

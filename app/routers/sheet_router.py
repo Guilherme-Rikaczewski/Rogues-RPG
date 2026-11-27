@@ -18,6 +18,10 @@ import app.services.sheet_service as ss
 import app.services.sheet_user_service as sus
 import app.services.tabletop_service as ts
 from app.services.auth_service import get_current_user_id
+from app.models.room_users import RoomUser
+from app.models.rooms import Room
+from app.models.room_sheet import RoomSheet
+from sqlalchemy import select
 
 
 router = APIRouter(
@@ -34,6 +38,18 @@ async def create(
 ):
 
     try:
+        if sheet.room_id is not None:
+            room_result = await db.execute(
+                select(Room).join(RoomUser, RoomUser.room_id == Room.id).where(
+                    Room.id == sheet.room_id,
+                    RoomUser.user_id == user_id,
+                )
+            )
+            room = room_result.scalar_one_or_none()
+            if not room:
+                raise HTTPException(403, detail="You are not a member of this room")
+            sheet.game_system = room.game_system
+
         new_sheet = await ss.create_sheet(db, sheet)
 
         if not new_sheet:
@@ -45,7 +61,7 @@ async def create(
         asset = await ts.create_asset(
             db,
             AssetCreate(
-                room_id=None,
+                room_id=sheet.room_id,
                 user_id=user_id,
                 sheet_id=new_sheet.id,  # type:ignore
                 asset_image_url=ts.get_random_default_image()
@@ -70,6 +86,10 @@ async def create(
                 400,
                 detail="Can't create sheet"
             )
+
+        if sheet.room_id is not None:
+            db.add(RoomSheet(room_id=sheet.room_id, sheet_id=new_sheet.id))
+            await db.commit()
 
         sheet_response = SheetResponse(
             id=new_sheet.id,  # type:ignore

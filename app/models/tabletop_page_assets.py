@@ -34,3 +34,5 @@ class TabletopPageAsset(Base):
     layer_order = Column(Integer, nullable=False, default=0)
 
     visible = Column(Boolean, nullable=True)
+
+    owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

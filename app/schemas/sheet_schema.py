@@ -15,6 +15,7 @@ class SheetCreate(BaseModel):
     game_system: GameSystem
     sheet_type: SheetType
     name: str
+    room_id: int | None = None
 
 # lembra de validar com algo como 
 # if data.game_system == "dnd5e":
