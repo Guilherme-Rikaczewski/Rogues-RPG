@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update, func
 from app.models.room_users import RoomUser
 from app.models.rooms import Room
 from app.schemas.types import RoomCode
@@ -56,6 +56,26 @@ async def read_role_room_user(
 
     except Exception:
 
+        await db.rollback()
+        raise
+
+
+async def update_room_last_access(
+    db: AsyncSession,
+    room_id: int,
+    user_id: int,
+) -> None:
+    try:
+        await db.execute(
+            update(RoomUser)
+            .where(
+                RoomUser.room_id == room_id,
+                RoomUser.user_id == user_id,
+            )
+            .values(last_access=func.now())
+        )
+        await db.commit()
+    except Exception:
         await db.rollback()
         raise
 

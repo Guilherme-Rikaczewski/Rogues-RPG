@@ -142,7 +142,11 @@ async def read_by_public_id(
     if not room_user:
         raise HTTPException(403, detail='Permission denied')
 
-    setattr(room, 'role', room_user.role)
+    room_role = room_user.role
+    await rus.update_room_last_access(db, room.id, user_id)
+    await db.refresh(room)
+
+    setattr(room, 'role', room_role)
     return room
 
 

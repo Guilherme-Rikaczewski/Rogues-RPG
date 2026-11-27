@@ -247,6 +247,7 @@ async def get_all_sheets_from_user(
                 RoomSheet.sheet_id.label("sheet_id"),
 
                 Room.id.label("room_id"),
+                Room.public_id.label("room_public_id"),
                 Room.room_name.label("room_name"),
                 Room.code.label("room_code"),
 
@@ -290,6 +291,7 @@ async def get_all_sheets_from_user(
                 profilepics_subq.c.profilepics,
 
                 latest_room_subq.c.room_id,
+                latest_room_subq.c.room_public_id,
                 latest_room_subq.c.room_name,
                 latest_room_subq.c.room_code
             )
@@ -331,6 +333,7 @@ async def get_all_sheets_from_user(
                 room=(
                     SheetRoomResponse(
                         id=row.room_id,
+                        public_id=row.room_public_id,
                         room_name=row.room_name,
                         code=row.room_code
                     )
